@@ -17,8 +17,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Mensagens por `code` de domínio — mais específico que o status HTTP.
+ * Sem isso, qualquer 401 (incluindo INVALID_CREDENTIALS do próprio login,
+ * onde nunca houve sessão) caía na mensagem genérica de "sessão expirada".
+ */
+const MESSAGE_BY_CODE: Record<string, string> = {
+  INVALID_CREDENTIALS: 'E-mail ou senha inválidos.',
+  ACCOUNT_SUSPENDED: 'Sua conta foi suspensa. Entre em contato com o suporte.',
+  TOO_MANY_LOGIN_ATTEMPTS:
+    'Muitas tentativas de login. Tente novamente em alguns minutos.',
+}
+
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.code in MESSAGE_BY_CODE) {
+      return MESSAGE_BY_CODE[error.code]
+    }
+
     switch (error.status) {
       case 400:
         return error.message || 'Dados inválidos.'

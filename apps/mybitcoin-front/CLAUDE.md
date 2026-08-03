@@ -49,15 +49,25 @@ src/
 └── test-utils.tsx       ← helpers para testes (renderWithProviders)
 ```
 
-### Quando usar Zustand
+### Zustand vs TanStack Query vs useState
 
-Zustand centraliza estado que precisa ser compartilhado entre componentes distantes na árvore. Use para:
+Regra prática: **dado que vem da API é problema do TanStack Query, não do Zustand.** Reimplementar cache/revalidação/staleness na mão dentro de uma store é o erro mais comum aqui — foi exatamente o que aconteceu com sessão/usuário antes de ser corrigido (ver `hooks/use-current-user.ts`, `hooks/use-login-mutation.ts`).
 
-- Sessão/autenticação do usuário
-- Saldo e carteiras (atualizam várias partes da UI)
-- Preferências globais (tema, moeda de exibição)
+Use Zustand só quando as três condições valem ao mesmo tempo:
 
-**NÃO use Zustand para** estado local de formulário, estado de modal/drawer em componente único — use `useState` nesses casos.
+1. O estado é **client-side genuíno** — nunca veio de um fetch (tema, sidebar aberta/fechada, filtros de UI, moeda de exibição preferida)
+2. Precisa ser **lido por componentes distantes na árvore** — se só o componente pai e um filho usam, `useState` no pai resolve
+3. **Sobrevive a navegação entre páginas** — senão é estado local mesmo
+
+Na dúvida, comece em `useState`/query e só suba pro Zustand quando sentir a dor real de prop drilling — não antecipe.
+
+| Tipo de estado | Onde vive | Exemplo |
+|---|---|---|
+| Dado de API (servidor) | TanStack Query (`useQuery`/`useMutation`) | usuário autenticado, saldo, carteiras, histórico de transações |
+| Client-side, cross-page | Zustand | tema, moeda de exibição, sidebar |
+| Client-side, local | `useState` | estado de formulário, modal/drawer em componente único |
+
+**NÃO use Zustand para** estado local de formulário, estado de modal/drawer em componente único, nem para nenhum dado que a API retorna — use `useState` ou TanStack Query, respectivamente.
 
 ---
 

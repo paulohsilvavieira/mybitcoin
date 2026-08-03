@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import { useCurrentUser } from '@/hooks/use-current-user'
 import { useAuthStore } from '@/stores/use-auth-store'
 import { PageSkeleton } from '@/components/page-skeleton'
 
@@ -8,12 +9,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredKyc = false }: ProtectedRouteProps) {
-  const user = useAuthStore((state) => state.user)
-  const isLoading = useAuthStore((state) => state.isLoading)
+  const { data: user, isPending } = useCurrentUser()
   const kycStatus = useAuthStore((state) => state.kycStatus)
   const location = useLocation()
 
-  if (isLoading) {
+  if (isPending) {
     return <PageSkeleton />
   }
 

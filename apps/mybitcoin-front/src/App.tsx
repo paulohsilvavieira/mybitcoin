@@ -11,6 +11,9 @@ const LoginPage = lazy(() =>
 const HomePage = lazy(() =>
   import('@/pages/home-page').then((module) => ({ default: module.HomePage })),
 )
+const WalletPage = lazy(() =>
+  import('@/pages/wallet-page').then((module) => ({ default: module.WalletPage })),
+)
 
 const queryClient = new QueryClient()
 
@@ -34,6 +37,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/wallet',
+        element: (
+          <ProtectedRoute>
+            <WalletPage />
           </ProtectedRoute>
         ),
       },

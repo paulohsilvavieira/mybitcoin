@@ -1,0 +1,4 @@
+# Gerado com `sdk env init` — usado pelo SDKMAN para fixar a versão do JDK
+# deste projeto. React Native/Android Gradle Plugin não suportam ainda o
+# JDK mais novo instalado nesta máquina (26); veja CLAUDE.md.
+java=17.0.13-tem

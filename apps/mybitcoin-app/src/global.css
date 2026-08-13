@@ -1,3 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tokens de design espelhados de ../mybitcoin-front/src/index.css (fonte da
+ * verdade). Os valores lá são oklch(); aqui são as mesmas cores convertidas
+ * para "R G B" (sRGB 0-255) porque o compilador CSS do NativeWind/RN não
+ * resolve oklch(). Ao mudar um token no front, recalcule e atualize aqui.
+ *
+ * Duas diferenças por limitação de RN (sem suporte nativo a alpha
+ * composto/outline): --border e --input no dark eram brancos translúcidos
+ * (10%/12%) no front — aqui já vêm resolvidos como a cor sólida equivalente
+ * sobre o --background do dark. --ring perdeu os 50% de alpha (fica sólido).
+ */
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
@@ -6,4 +21,59 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+
+  --background: 255 255 255;
+  --foreground: 9 14 19;
+  --card: 255 255 255;
+  --card-foreground: 9 14 19;
+  --popover: 255 255 255;
+  --popover-foreground: 9 14 19;
+  --primary: 19 90 228;
+  --primary-foreground: 252 252 252;
+  --secondary: 239 242 246;
+  --secondary-foreground: 9 14 19;
+  --muted: 239 242 246;
+  --muted-foreground: 98 106 115;
+  --accent: 224 236 255;
+  --accent-foreground: 0 44 136;
+  --destructive: 223 32 46;
+  --destructive-foreground: 252 252 252;
+  --border: 225 229 234;
+  --input: 225 229 234;
+  --ring: 19 90 228;
+  --radius: 8px;
+}
+
+.dark:root {
+  --background: 7 11 17;
+  --foreground: 243 245 248;
+  --card: 15 20 27;
+  --card-foreground: 243 245 248;
+  --popover: 15 20 27;
+  --popover-foreground: 243 245 248;
+  --primary: 69 130 250;
+  --primary-foreground: 7 11 17;
+  --secondary: 31 37 44;
+  --secondary-foreground: 243 245 248;
+  --muted: 31 37 44;
+  --muted-foreground: 147 153 161;
+  --accent: 27 41 66;
+  --accent-foreground: 177 207 255;
+  --destructive: 241 77 76;
+  --destructive-foreground: 7 11 17;
+  --border: 32 35 41;
+  --input: 37 40 46;
+  --ring: 69 130 250;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

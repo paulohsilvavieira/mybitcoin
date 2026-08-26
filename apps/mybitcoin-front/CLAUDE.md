@@ -229,35 +229,6 @@ const OrderBookPage = lazy(() => import('./pages/order-book/OrderBookPage'))
 
 ---
 
-## Skills disponíveis
-
-Skills ficam em `.claude/skills/`. Invoque com `/nome-da-skill`.
-
-### Pipeline de ADR
-
-Use quando uma decisão de estrutura for necessária (nova store, nova página complexa, padrão de dados, integração com endpoint novo).
-
-| Skill | Comando | Quando usar |
-|-------|---------|------------|
-| `adr-architect` | `/adr-architect` | Iniciar ADR — faz perguntas, monta o documento |
-| `adr-validator` | `/adr-validator` | Revisar adversarialmente antes de implementar |
-| `adr-executor` | `/adr-executor` | Implementar um ADR aceito |
-| `adr-reviewer` | `/adr-reviewer` | Revisar o diff contra o ADR |
-| `adr-pr` | `/adr-pr` | Abrir PR padronizado |
-
-**Ordem:** `architect` → `validator` → (aprovação humana) → `executor` → `reviewer` → `pr`
-
-### Qualidade e descoberta
-
-| Skill | Comando | O que faz |
-|-------|---------|----------|
-| `task-planner` | `/task-planner` | Planeja implementação antes de codar — lista arquivos, hooks, stores e queries a criar |
-| `component-reviewer` | `/component-reviewer` | Revisa componentes React: shadcn patterns, a11y, mobile-first, hooks, Zustand |
-| `shadcn-component-discovery` | `/shadcn-component-discovery` | Busca componentes no ecossistema shadcn antes de criar do zero |
-| `shadcn-component-review` | `/shadcn-component-review` | Revisa componentes contra padrões shadcn (tokens, spacing, CVA, data-slot) |
-
----
-
 ## Comandos principais
 
 ```bash

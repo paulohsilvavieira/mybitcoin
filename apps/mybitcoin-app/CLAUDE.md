@@ -62,27 +62,3 @@ src/
 ```
 
 Same state-placement rule as the front: API data → TanStack Query, cross-screen client state → Zustand, per-screen state → `useState`. Tokens/session → `expo-secure-store`, never `AsyncStorage` in plaintext.
-
-## Skills available
-
-Skills live in `.claude/skills/`. Invoke with `/name`. Ported and adapted from `../mybitcoin-front` (closest sibling in stack) — the two shadcn-specific skills weren't ported since this repo has no shadcn/RN component-registry equivalent; their token/spacing-audit principles were folded into `component-reviewer` instead.
-
-### ADR pipeline
-
-| Skill | Command | When to use |
-|-------|---------|------------|
-| `adr-architect` | `/adr-architect` | Start an ADR — asks questions, drafts the document |
-| `adr-validator` | `/adr-validator` | Adversarial review before implementing |
-| `adr-executor` | `/adr-executor` | Implement an accepted ADR |
-| `adr-reviewer` | `/adr-reviewer` | Review the diff against the ADR |
-| `adr-pr` | `/adr-pr` | Open a standardized PR |
-
-**Order:** `architect` → `validator` → (human approval) → `executor` → `reviewer` → `pr`
-
-### Planning and quality
-
-| Skill | Command | What it does |
-|-------|---------|----------|
-| `task-planner` | `/task-planner` | Plans implementation before coding — lists files, hooks, stores and services to create |
-| `component-reviewer` | `/component-reviewer` | Reviews components/screens: NativeWind tokens, native a11y, platform divergence (`.web.tsx`), hooks, Zustand |
-| `dev-pipeline` | `/dev-pipeline` | Orchestrates the whole flow above end-to-end, with a human gate at every step |

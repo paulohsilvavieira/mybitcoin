@@ -6,13 +6,48 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useWalletBalances } from '@/hooks/use-wallet-balances'
 import { ApiError, handleApiError } from '@/lib/api-errors'
 import { BalanceCard } from '@/components/wallet/balance-card'
+import type { Balance } from '@/types/wallet'
+
+interface BalanceRowsProps {
+  balances: Balance[]
+}
+
+/** Container de linhas divididas — extraído para ser reutilizável por uma
+ * eventual tela de preview com dados mocados, sem duplicar o markup. */
+export function BalanceRows({ balances }: BalanceRowsProps) {
+  return (
+    <div
+      className="divide-y divide-border rounded-xl border border-border bg-card"
+      role="list"
+      aria-label="Saldos por ativo"
+    >
+      {balances.map((balance) => (
+        <div role="listitem" key={balance.asset}>
+          <BalanceCard balance={balance} />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function BalanceListSkeleton() {
   return (
-    <div className="grid gap-4" aria-hidden="true">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
+    <div
+      className="divide-y divide-border rounded-xl border border-border bg-card"
+      aria-hidden="true"
+    >
+      <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
+        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
+        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
+        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
     </div>
   )
 }
@@ -73,13 +108,5 @@ export function BalanceList() {
     return <BalanceListEmpty />
   }
 
-  return (
-    <div className="grid gap-4" role="list" aria-label="Saldos por ativo">
-      {balances.map((balance) => (
-        <div role="listitem" key={balance.asset}>
-          <BalanceCard balance={balance} />
-        </div>
-      ))}
-    </div>
-  )
+  return <BalanceRows balances={balances} />
 }

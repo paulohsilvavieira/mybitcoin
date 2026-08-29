@@ -43,14 +43,26 @@ describe('BalanceList', () => {
 
   it('exibe os saldos por ativo quando a requisição é bem-sucedida', async () => {
     vi.spyOn(walletService, 'getBalances').mockResolvedValue([
-      buildBalance({ asset: 'BTC', available: '150000', total: '150000' }),
+      buildBalance({ asset: 'BTC', available: '150000', locked: '0', total: '150000' }),
     ])
 
     renderWithProviders(<BalanceList />)
 
-    expect(await screen.findByText('BTC')).toBeInTheDocument()
-    expect(screen.getAllByText('0.00150000 BTC')).toHaveLength(2)
-    expect(screen.getByText('0.00000000 BTC')).toBeInTheDocument()
+    expect(await screen.findByText('Bitcoin')).toBeInTheDocument()
+    expect(screen.getByText('BTC')).toBeInTheDocument()
+    expect(screen.getByText('0.00150000 BTC')).toBeInTheDocument()
+    expect(screen.queryByText(/bloqueado/)).not.toBeInTheDocument()
+  })
+
+  it('mostra o saldo bloqueado só quando há algo bloqueado', async () => {
+    vi.spyOn(walletService, 'getBalances').mockResolvedValue([
+      buildBalance({ asset: 'BTC', available: '150000', locked: '50000', total: '200000' }),
+    ])
+
+    renderWithProviders(<BalanceList />)
+
+    expect(await screen.findByText('0.00150000 BTC')).toBeInTheDocument()
+    expect(screen.getByText('0.00050000 BTC bloqueado')).toBeInTheDocument()
   })
 
   it('mostra estado vazio quando não há nenhum ativo movimentado', async () => {

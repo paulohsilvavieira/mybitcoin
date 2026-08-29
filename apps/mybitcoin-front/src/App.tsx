@@ -14,6 +14,20 @@ const HomePage = lazy(() =>
 const WalletPage = lazy(() =>
   import('@/pages/wallet-page').then((module) => ({ default: module.WalletPage })),
 )
+const WalletPreviewPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/wallet-preview-page').then((module) => ({
+        default: module.WalletPreviewPage,
+      })),
+    )
+  : null
+const TradingPreviewPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/trading-preview-page').then((module) => ({
+        default: module.TradingPreviewPage,
+      })),
+    )
+  : null
 
 const queryClient = new QueryClient()
 
@@ -48,6 +62,13 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      // Rotas de preview visual, sem auth — só existem em `pnpm dev` (import.meta.env.DEV).
+      ...(WalletPreviewPage
+        ? [{ path: '/preview/wallet', element: <WalletPreviewPage /> }]
+        : []),
+      ...(TradingPreviewPage
+        ? [{ path: '/preview/trading', element: <TradingPreviewPage /> }]
+        : []),
     ],
   },
 ])

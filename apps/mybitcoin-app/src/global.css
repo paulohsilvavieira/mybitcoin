@@ -4,66 +4,68 @@
 
 /*
  * Tokens de design espelhados de ../mybitcoin-front/src/index.css (fonte da
- * verdade). Os valores lá são oklch(); aqui são as mesmas cores convertidas
+ * verdade). Os valores lá são hex; aqui são as mesmas cores convertidas
  * para "R G B" (sRGB 0-255) porque o compilador CSS do NativeWind/RN não
- * resolve oklch(). Ao mudar um token no front, recalcule e atualize aqui.
- *
- * Duas diferenças por limitação de RN (sem suporte nativo a alpha
- * composto/outline): --border e --input no dark eram brancos translúcidos
- * (10%/12%) no front — aqui já vêm resolvidos como a cor sólida equivalente
- * sobre o --background do dark. --ring perdeu os 50% de alpha (fica sólido).
+ * resolve `color-mix`/oklch. Ao mudar um token no front, recalcule e
+ * atualize aqui.
  */
 :root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
 
-  --background: 255 255 255;
-  --foreground: 9 14 19;
+  --background: 247 247 245;
+  --foreground: 16 19 26;
   --card: 255 255 255;
-  --card-foreground: 9 14 19;
+  --card-foreground: 16 19 26;
   --popover: 255 255 255;
-  --popover-foreground: 9 14 19;
-  --primary: 19 90 228;
-  --primary-foreground: 252 252 252;
-  --secondary: 239 242 246;
-  --secondary-foreground: 9 14 19;
-  --muted: 239 242 246;
-  --muted-foreground: 98 106 115;
-  --accent: 224 236 255;
-  --accent-foreground: 0 44 136;
-  --destructive: 223 32 46;
+  --popover-foreground: 16 19 26;
+  --primary: 67 45 215;
+  --primary-foreground: 238 242 255;
+  --secondary: 237 238 236;
+  --secondary-foreground: 16 19 26;
+  --muted: 237 238 236;
+  --muted-foreground: 99 102 109;
+  --accent: 237 238 236;
+  --accent-foreground: 16 19 26;
+  --destructive: 217 53 38;
   --destructive-foreground: 252 252 252;
-  --border: 225 229 234;
-  --input: 225 229 234;
-  --ring: 19 90 228;
+  --border: 225 226 224;
+  --input: 225 226 224;
+  --ring: 159 159 169;
   --radius: 8px;
+
+  /* Superfície fixa do painel de marca do login — não inverte com o tema. */
+  --brand-panel: 16 19 26;
+  --brand-panel-foreground: 247 247 245;
+
+  /* Semântica universal de mercado (compra/alta vs. venda/baixa) — não é
+     cor de marca, por isso vive fora do par --primary/--destructive. */
+  --success: 26 127 66;
+  --success-foreground: 240 255 244;
 }
 
 .dark:root {
-  --background: 7 11 17;
-  --foreground: 243 245 248;
-  --card: 15 20 27;
-  --card-foreground: 243 245 248;
-  --popover: 15 20 27;
-  --popover-foreground: 243 245 248;
-  --primary: 69 130 250;
-  --primary-foreground: 7 11 17;
-  --secondary: 31 37 44;
-  --secondary-foreground: 243 245 248;
-  --muted: 31 37 44;
-  --muted-foreground: 147 153 161;
-  --accent: 27 41 66;
-  --accent-foreground: 177 207 255;
-  --destructive: 241 77 76;
-  --destructive-foreground: 7 11 17;
-  --border: 32 35 41;
-  --input: 37 40 46;
-  --ring: 69 130 250;
+  --background: 16 19 26;
+  --foreground: 242 242 240;
+  --card: 23 27 34;
+  --card-foreground: 242 242 240;
+  --popover: 23 27 34;
+  --popover-foreground: 242 242 240;
+  --primary: 55 42 172;
+  --primary-foreground: 238 242 255;
+  --secondary: 30 35 44;
+  --secondary-foreground: 242 242 240;
+  --muted: 30 35 44;
+  --muted-foreground: 155 160 170;
+  --accent: 30 35 44;
+  --accent-foreground: 242 242 240;
+  --destructive: 240 85 74;
+  --destructive-foreground: 16 19 26;
+  --border: 38 43 52;
+  --input: 38 43 52;
+  --ring: 113 113 123;
+  --success: 52 211 153;
+  --success-foreground: 5 46 20;
 }
 
 @layer base {

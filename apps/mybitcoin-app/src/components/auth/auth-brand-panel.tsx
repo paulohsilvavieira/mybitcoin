@@ -9,7 +9,7 @@ import { StyleSheet, View } from 'react-native';
  */
 export function AuthBrandPanel() {
   return (
-    <View className='h-[36vh] shrink-0 items-center justify-center overflow-hidden'>
+    <View className='h-[36vh] shrink-0 items-center justify-center overflow-hidden bg-brand-panel'>
       <Image
         source={require('@/assets/images/wave-haikei.svg')}
         contentFit='cover'
@@ -35,8 +35,8 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   logo: {
-    width: 324,
+    width: 420,
     maxWidth: '80%',
-    height: 106,
+    height: 140,
   },
 });

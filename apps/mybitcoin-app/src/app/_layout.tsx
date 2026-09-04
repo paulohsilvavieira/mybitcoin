@@ -45,6 +45,12 @@ function RootNavigator() {
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name='login' />
       </Stack.Protected>
+
+      {/* Rotas de preview visual, sem auth — mesmo espírito do
+          `/preview/*` do `../mybitcoin-front`. Não são rota de produto:
+          nunca linkar a partir de UI real. */}
+      <Stack.Screen name='preview-wallet' />
+      <Stack.Screen name='preview-trading' />
     </Stack>
   );
 }

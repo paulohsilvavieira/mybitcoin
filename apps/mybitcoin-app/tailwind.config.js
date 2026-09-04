@@ -41,6 +41,14 @@ module.exports = {
           DEFAULT: 'rgb(var(--card) / <alpha-value>)',
           foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
         },
+        'brand-panel': {
+          DEFAULT: 'rgb(var(--brand-panel) / <alpha-value>)',
+          foreground: 'rgb(var(--brand-panel-foreground) / <alpha-value>)',
+        },
+        success: {
+          DEFAULT: 'rgb(var(--success) / <alpha-value>)',
+          foreground: 'rgb(var(--success-foreground) / <alpha-value>)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -52,6 +60,13 @@ module.exports = {
         'sans-medium': ['Geist_500Medium'],
         'sans-semibold': ['Geist_600SemiBold'],
         'sans-bold': ['Geist_700Bold'],
+        // Sem fonte monoespaçada empacotada ainda (nenhum pacote
+        // @expo-google-fonts instalado pra isso). `tailwind.config.js` roda
+        // uma vez via PostCSS, não por bundle de plataforma — não dá pra
+        // usar `Platform.select` aqui. 'monospace' resolve nativo no
+        // Android; no iOS, sem fonte com esse nome exato, a RN cai pro
+        // system default (degrada, não quebra).
+        mono: ['monospace'],
       },
       borderWidth: {
         hairline: hairlineWidth(),

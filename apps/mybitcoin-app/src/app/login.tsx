@@ -1,9 +1,11 @@
+import { Link } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthBrandPanel } from '@/components/auth/auth-brand-panel';
 import { LoginForm } from '@/components/auth/login-form';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -11,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
 
 /**
  * Tela de login — porte do `login-page.tsx` do `../mybitcoin-front`.
@@ -32,7 +35,7 @@ export default function LoginScreen() {
     >
       <SafeAreaView edges={['top']} className="absolute right-0 top-0 z-20 w-full">
         <View className="items-end px-4 pt-2">
-          <ThemeToggle />
+          <ThemeToggle variant="onBrandPanel" />
         </View>
       </SafeAreaView>
 
@@ -57,6 +60,22 @@ export default function LoginScreen() {
               <LoginForm />
             </CardContent>
           </Card>
+
+          {/* TEMPORÁRIO — atalhos para testar as telas de preview no device.
+              Remover antes de mergear: preview-wallet/preview-trading nunca
+              devem ser alcançáveis a partir de UI real. */}
+          <View className='mt-6 w-full max-w-sm shrink-0 gap-2 self-center'>
+            <Link href='/preview-wallet' asChild>
+              <Button variant='outline'>
+                <Text>Preview: Wallet</Text>
+              </Button>
+            </Link>
+            <Link href='/preview-trading' asChild>
+              <Button variant='outline'>
+                <Text>Preview: Trading</Text>
+              </Button>
+            </Link>
+          </View>
         </SafeAreaView>
       </ScrollView>
     </KeyboardAvoidingView>

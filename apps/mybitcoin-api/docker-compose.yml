@@ -1,0 +1,129 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: pnpm start:dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      FRONTEND_ORIGIN: http://localhost:5173
+      DB_WRITE_HOST: postgres-primary
+      DB_WRITE_PORT: 5432
+      DB_READ_HOST: postgres-replica
+      DB_READ_PORT: 5432
+      DB_NAME: mybitcoin
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_POOL_SIZE: 10
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres-replica:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-primary:
+    image: postgres:17-alpine
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby=on
+    environment:
+      POSTGRES_DB: mybitcoin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: replicator_password
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mybitcoin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-replica:
+    image: postgres:17-alpine
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: replicator_password
+      POSTGRES_PRIMARY_HOST: postgres-primary
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+      - ./docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
+    entrypoint: ["/entrypoint-replica.sh"]
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mybitcoin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  test-postgres-primary:
+    image: postgres:17-alpine
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby=on
+    environment:
+      POSTGRES_DB: mybitcoin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: replicator_password
+    volumes:
+      - postgres_test_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
+    ports:
+      - "5444:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mybitcoin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  test-postgres-replica:
+    image: postgres:17-alpine
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: replicator_password
+      POSTGRES_PRIMARY_HOST: test-postgres-primary
+    volumes:
+      - postgres_test_replica_data:/var/lib/postgresql/data
+      - ./docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
+    entrypoint: ["/entrypoint-replica.sh"]
+    depends_on:
+      test-postgres-primary:
+        condition: service_healthy
+    ports:
+      - "5445:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mybitcoin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_primary_data:
+  postgres_replica_data:
+  postgres_test_primary_data:
+  postgres_test_replica_data:

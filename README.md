@@ -1,159 +1,174 @@
-# Turborepo starter
+# MyBitcoin
 
-This Turborepo starter is maintained by the Turborepo core team.
+Monorepo da plataforma MyBitcoin — uma exchange de criptomoedas. Reúne o backend, o frontend web e o app mobile num único repositório, com histórico de commits preservado dos três projetos que o originaram (`mybitcoin-api`, `mybitcoin-front`, `mybitcoin-app`).
 
-## Using this example
+## O que é este projeto
 
-Run the following command:
+Funcionalidades cobertas pela plataforma: autenticação/KYC, carteiras, ledger financeiro com dupla entrada, order book, matching engine, depósitos/saques de Bitcoin on-chain.
 
-```sh
-npx create-turbo@latest
+## Estrutura do monorepo
+
+```
+mybitcoin/
+├── apps/
+│   ├── mybitcoin-api/      ← Backend (NestJS + PostgreSQL)
+│   ├── mybitcoin-front/    ← Frontend web (Vite + React)
+│   └── mybitcoin-app/      ← App mobile (Expo Router / React Native)
+├── packages/
+│   ├── eslint-config/      ← Configuração de ESLint compartilhável (ainda não adotada pelos apps)
+│   ├── typescript-config/  ← tsconfig.json base compartilhável (ainda não adotada pelos apps)
+│   └── ui/                 ← Biblioteca de componentes React compartilhável (scaffold do Turborepo, ainda não usada)
+├── docs/
+│   ├── adr/                ← Registro de decisões arquiteturais (ADRs) — histórico de decisões já tomadas
+│   ├── architecture/       ← Fundamentos de arquitetura (Clean Architecture + DDD) usados pelo backend
+│   ├── bussiness/          ← Documentação de regras de negócio — tratada como "lei" do domínio
+│   ├── old-adrs/           ← ADRs superados, mantidos só como referência histórica
+│   └── examples/           ← Exemplos de padrões de código já superados/substituídos
+├── turbo.json               ← Pipelines do Turborepo (build, lint, test, dev)
+└── pnpm-workspace.yaml       ← Definição do workspace pnpm
 ```
 
-## What's inside?
+Cada app em `apps/` mantém seu próprio `CLAUDE.md`/`README.md` com convenções específicas — vale a pena ler o de cada um antes de mexer nele. `apps/mybitcoin-api/CLAUDE.md` é o mais detalhado, já que a API segue Clean Architecture + DDD com regras rígidas (ver seção "Convenções por app" abaixo).
 
-This Turborepo includes the following packages/apps:
+Os três apps ainda usam suas próprias configs de lint/TypeScript (`packages/eslint-config`, `packages/typescript-config`, `packages/ui` existem no scaffold do Turborepo, mas a migração para eles é um passo futuro, não feito nesta unificação).
 
-### Apps and Packages
+---
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Pré-requisitos
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+| Ferramenta | Versão |
+|---|---|
+| Node.js | ≥ 24 |
+| pnpm | 11.x (o repo fixa `packageManager: pnpm@11.25.0`) |
+| Docker + Docker Compose | necessário só para rodar a API com banco real (Postgres primary/replica) |
 
-### Utilities
+Para o app mobile (Expo), veja também os pré-requisitos do [Expo](https://docs.expo.dev/get-started/installation/) (Xcode para iOS, Android Studio para Android, ou apenas o navegador para `--web`).
 
-This Turborepo has some additional tools already setup for you:
+---
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## Instalação
 
-### Build
+Na raiz do monorepo:
 
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+pnpm install
 ```
 
-Without global `turbo`, use your package manager:
+Isso instala as dependências de todos os workspaces (`apps/*` e `packages/*`) de uma vez, via pnpm workspaces.
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm exec turbo build
-pnpm exec turbo build
+O `pnpm-workspace.yaml` já aprova os scripts de build de dependências nativas necessários (`bcrypt`, `esbuild`, `@parcel/watcher`, `protobufjs`, `unrs-resolver`). Se o pnpm reclamar de builds ignorados (ex.: depois de adicionar uma dependência nova que também precise compilar nativo), rode `pnpm approve-builds` e adicione a entrada correspondente em `pnpm-workspace.yaml`.
+
+---
+
+## Comandos (via Turborepo)
+
+Todos os comandos abaixo rodam a partir da **raiz do monorepo** e usam o [Turborepo](https://turborepo.dev) para orquestrar as tasks em paralelo, com cache. Cada task só roda no(s) app(s) que tiver o script correspondente no seu `package.json` — apps sem o script são pulados automaticamente.
+
+```bash
+pnpm build       # build de mybitcoin-api (nest build) e mybitcoin-front (tsc -b && vite build)
+pnpm dev         # sobe todos os apps em modo watch/dev, em paralelo (nest start --watch, vite, expo start)
+pnpm lint        # lint de mybitcoin-api (eslint --fix), mybitcoin-front (eslint) e mybitcoin-app (expo lint)
+pnpm test        # testes de mybitcoin-api (jest) e mybitcoin-front (vitest run)
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Rodar um app específico com o filtro do Turborepo:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+pnpm exec turbo run dev --filter=mybitcoin-api
+pnpm exec turbo run build --filter=mybitcoin-front
+pnpm exec turbo run lint --filter=mybitcoin-app
+pnpm exec turbo run test --filter=mybitcoin-api
 ```
 
-Without global `turbo`:
+Os nomes de filtro são os campos `name` do `package.json` de cada app: `mybitcoin-api`, `mybitcoin-front`, `mybitcoin-app`. `mybitcoin-app` não define scripts `build`/`test` (apps Expo não têm build tradicional) — o Turborepo pula essas tasks automaticamente para ele.
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+---
+
+## Rodando cada app individualmente
+
+### `mybitcoin-api` (backend)
+
+```bash
+cd apps/mybitcoin-api
+cp .env.example .env          # ajustar credenciais se necessário
+docker compose up -d --wait postgres-primary postgres-replica
+pnpm migration:run
+pnpm start:dev                 # http://localhost:3000
 ```
 
-### Develop
+Outros comandos úteis, direto na pasta do app:
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+pnpm test                      # testes unitários + de integração (exige banco — ver abaixo)
+pnpm test:cov                  # com cobertura
+pnpm test:e2e                  # testes e2e
+pnpm migration:create          # criar novo arquivo de migration
+pnpm migration:dry-run         # simular migrations sem aplicar
 ```
 
-Without global `turbo`, use your package manager:
+**Testes de integração exigem um banco de teste rodando:**
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm prepare:test               # sobe test-postgres-primary/replica via docker compose e roda as migrations de teste
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Sem isso, os testes de integração/e2e falham por não conseguir conectar ao Postgres — é esperado, não é bug.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Documentação de arquitetura e regras de negócio da API vive na raiz do monorepo (`docs/`), não mais dentro da pasta do app — ver seção "Documentação" abaixo.
 
-```sh
-turbo dev --filter=web
+### `mybitcoin-front` (frontend web)
+
+```bash
+cd apps/mybitcoin-front
+pnpm dev                        # http://localhost:5173, hot reload via Vite
 ```
 
-Without global `turbo`:
+Requer a API rodando em `http://localhost:3000` (ou defina `VITE_API_URL` apontando para outro host).
 
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+pnpm build                      # build de produção (tsc -b && vite build)
+pnpm preview                     # servir o build de produção localmente
+pnpm test                        # vitest run
+pnpm test:watch                  # vitest em modo watch
+pnpm lint                        # eslint .
 ```
 
-### Remote Caching
+### `mybitcoin-app` (mobile — Expo)
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+```bash
+cd apps/mybitcoin-app
+cp .env.example .env             # EXPO_PUBLIC_API_URL=http://localhost:3000
+pnpm start                        # abre o Metro bundler / Expo Dev Tools
 ```
 
-Without global `turbo`, use your package manager:
+A partir da tela de login (ADR 0005 — ver `docs/adr/0005-login-logout.md`), o app usa um módulo nativo de cookie manager e **saiu do Expo Go** — rode com dev client:
 
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
+```bash
+pnpm android                      # expo run:android
+pnpm ios                          # expo run:ios
+pnpm web                          # expo start --web (sem restrição de dev client)
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Requer a API rodando e acessível pelo dispositivo/emulador (`EXPO_PUBLIC_API_URL`).
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## Documentação
 
-```sh
-turbo link
-```
+A documentação de arquitetura e de regras de negócio é compartilhada por todos os apps e vive na raiz do monorepo, em `docs/`:
 
-Without global `turbo`:
+| Pasta | Conteúdo |
+|---|---|
+| [`docs/architecture/`](docs/architecture/) | Fundamentos de Clean Architecture + DDD, estrutura de pastas, critério de quando aplicar CA vs. abordagem simples — referência principal usada pelo backend |
+| [`docs/bussiness/`](docs/bussiness/) | Regras de negócio da plataforma (identidade/acesso, carteiras/ledger, mercados, order book, matching engine, taxas, depósitos/saques, invariantes globais, cenários BDD) — tratadas como "lei" do domínio |
+| [`docs/adr/`](docs/adr/) | Registro de decisões arquiteturais (ADRs) já tomadas e implementadas, numeradas sequencialmente (0001 em diante). Algumas cobrem mais de um app quando a mesma decisão atravessa backend/frontend/mobile (ex.: `0005-login-logout.md`) |
+| [`docs/old-adrs/`](docs/old-adrs/) | ADRs superados por decisões mais recentes, mantidos só como referência histórica |
+| [`docs/examples/`](docs/examples/) | Exemplos de padrões de código já substituídos por decisões mais recentes |
 
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
+Cada app também tem seu próprio `CLAUDE.md`/`README.md` com convenções específicas de código (ex.: `apps/mybitcoin-api/CLAUDE.md` documenta as regras de Clean Architecture, uso de `bigint` para valores monetários, UnitOfWork, etc. — leitura obrigatória antes de tocar em código financeiro).
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## Sobre a unificação deste monorepo
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Este repositório nasceu da unificação de três repositórios antigos (`mybitcoin-api`, `mybitcoin-front`, `mybitcoin-app`), preservando o histórico completo de commits de cada um (via `git filter-repo`, movendo cada repo para sua respectiva subpasta em `apps/` antes de mesclar os históricos). Branches de feature ainda em desenvolvimento no momento da unificação também foram migradas quando possível. A documentação de arquitetura/negócio, antes duplicada ou específica de cada repo, foi consolidada em `docs/` na raiz.

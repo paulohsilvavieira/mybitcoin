@@ -169,6 +169,19 @@ Cada app também tem seu próprio `CLAUDE.md`/`README.md` com convenções espec
 
 ---
 
+## CI/CD
+
+Os workflows do GitHub Actions vivem em `.github/workflows/` na raiz (o GitHub só reconhece workflows nesse caminho — pastas `.github/` dentro de `apps/*` são ignoradas pela plataforma):
+
+| Workflow | O que faz | Status no monorepo |
+|---|---|---|
+| `ci.yml` | Lint, build e testes dos três apps via Turborepo (`pnpm lint`/`build`/`test` a partir da raiz), mais os testes de replicação Postgres da API (ADR 0003) | ✅ Adaptado — roda para `mybitcoin-api`, `mybitcoin-front` e `mybitcoin-app` |
+| `deploy-automatic.yml`, `deploy-prod.yml`, `deploy-manual.yml`, `manual-deploy.yml` | Build & push de imagem Docker da API, atualização de manifest e deploy via ArgoCD | ⚠️ **Só movidos, não adaptados** — ainda apontam para o Dockerfile/`k8s/` na raiz do repo antigo standalone (`--repo https://github.com/paulohsilvavieira/mybitcoin-api.git`, `context: .`, `k8s/production/...`). Precisam ser atualizados para os paths do monorepo (`apps/mybitcoin-api/Dockerfile`, `apps/mybitcoin-api/k8s/...`) e para a URL do novo repositório antes de serem usados — deixados pendentes deliberadamente até o monorepo ser publicado e as secrets configuradas nele |
+
+`deploy-automatic.yml` e `deploy-prod.yml` já eram duas versões praticamente duplicadas do mesmo pipeline antes da migração (nomes de imagem/app diferentes: `mybtc-api` vs `mybitcoin-api`) — vale decidir qual delas manter ao fazer o ajuste acima, em vez de manter as duas.
+
+---
+
 ## Sobre a unificação deste monorepo
 
 Este repositório nasceu da unificação de três repositórios antigos (`mybitcoin-api`, `mybitcoin-front`, `mybitcoin-app`), preservando o histórico completo de commits de cada um (via `git filter-repo`, movendo cada repo para sua respectiva subpasta em `apps/` antes de mesclar os históricos). Branches de feature ainda em desenvolvimento no momento da unificação também foram migradas quando possível. A documentação de arquitetura/negócio, antes duplicada ou específica de cada repo, foi consolidada em `docs/` na raiz.

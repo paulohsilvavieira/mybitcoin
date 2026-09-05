@@ -1,17 +1,19 @@
 
-# ADR 0005 — Identity: Login e Logout
+# ADR 0005 — Identity: Login e Logout (Backend, Frontend Web e Mobile)
 
 **Status:** Implementado
 
-**PR:** https://github.com/paulohsilvavieira/mybitcoin-api/pull/5 (mergeado)
+**PRs:** Backend/Frontend Web — https://github.com/paulohsilvavieira/mybitcoin-api/pull/5 (mergeado). Mobile — `feat(auth): tela de login e camada de autenticação` (histórico de commits de `apps/mybitcoin-app`).
 
-**Data:** 2026-08-01
+**Datas:** Backend/Frontend Web — 2026-08-01. Mobile — 2026-08-12.
 
-**Autores:** Time de Backend
+**Autores:** Time de Backend (2026-08-01), Time Mobile (2026-08-12)
 
 **Contexto relacionado:** ADR 0002 (Identity: Cadastro de Usuários), ADR 0004 (Transporte de Sessão via Cookie httpOnly)
 
 **Gerado por:** skill `/adr-architect`
+
+**Nota de consolidação:** Este documento consolida duas decisões originalmente registradas separadamente — `mybitcoin-api/docs/adr/0005-login-logout.md` (backend + bootstrap do `mybitcoin-front`) e `mybitcoin-app/docs/adr/0001-login-screen.md` (mobile) — durante a unificação dos três repositórios em monorepo (2026-09-04). O conteúdo de ambas foi preservado; a numeração e a estrutura de seções foram unificadas. A seção "Mobile — Tela de Login" cobre a decisão específica do app; as demais seções (Backend, Frontend Web) refletem o documento original da API.
 
 ---
 
@@ -19,16 +21,16 @@
 
 O bounded context `identity` tem hoje Cadastro (ADR 0002, CAD-001 a CAD-007) e a infraestrutura de Sessões (ADR 0004: cookie `__Host-session`, cookie CSRF `__Host-csrf`, `SessionAuthGuard`, `DomainErrorFilter`, `cookie-parser`, CORS) implementados e funcionando. `docs/bussiness/02-identidade-e-acesso.md` define ainda Login (LOG-001 a LOG-006) e Logout (OUT-001 a OUT-003) — nenhum dos dois implementado.
 
-O ADR 0004 já deixou pronto o contrato que Login/Logout precisam consumir: `CreateSession` (mint de token + persistência), `RevokeSession`/`RevokeAllSessions` (revogação), `setSessionCookies`/`clearSessionCookies` (helpers de cookie), `SessionAuthGuard` (proteção de rota) e `DomainErrorFilter` (mapeamento de erro → HTTP). Este ADR fecha o elo que faltava: **validar credenciais e criar/revogar sessão a partir delas**, o único pedaço do fluxo de autenticação que ainda não existe.
+O ADR 0004 já deixou pronto o contrato que Login/Logout precisam consumir: `CreateSession` (mint de token + persistência), `RevokeSession`/`RevokeAllSessions` (revogação), `setSessionCookies`/`clearSessionCookies` (helpers de cookie), `SessionAuthGuard` (proteção de rota) e `DomainErrorFilter` (mapeamento de erro → HTTP). Este ADR fecha o elo que faltava: **validar credenciais e criar/revogar sessão a partir delas**, o único pedaço do fluxo de autenticação que ainda não existia.
 
 Duas descobertas de código, feitas antes deste ADR, moldam o escopo:
 
 1. **Verificação de e-mail não existe de fato.** `RegisterUser` gera um `verificationToken` mas nunca o persiste, e `EmailService.sendVerification` é um stub no-op (`identity.module.ts:52-56`). Nenhum usuário jamais transita de `PENDING_EMAIL_VERIFICATION` para `ACTIVE` hoje. LOG-002 ("email deve estar verificado") aplicado à risca bloquearia login para 100% dos usuários.
 2. **`mybitcoin-front` está no template inicial do Vite.** `App.tsx` é o boilerplate padrão, sem roteador configurado (apesar de `react-router-dom` já ser dependência), sem cliente HTTP, sem páginas. Existe apenas um `useAuthStore` (Zustand) e um `ProtectedRoute` esqueleto, ambos nunca conectados a uma API real.
 
-Este ADR cobre Login, Logout (sessão atual e global) e o endpoint de perfil (`GET /auth/me`) necessário para o frontend restaurar sessão — API e bootstrap mínimo do frontend (roteamento, cliente HTTP, páginas de login).
+Este ADR cobre Login, Logout (sessão atual e global) e o endpoint de perfil (`GET /auth/me`) necessário para o frontend restaurar sessão — API e bootstrap mínimo do frontend (roteamento, cliente HTTP, páginas de login). Meses depois (2026-08-12), a mesma decisão de sessão foi portada para o mobile (`mybitcoin-app`) — ver seção "Mobile — Tela de Login" abaixo.
 
-**Fora de escopo** (não implementado aqui, tratado como débito técnico documentado): MFA/2FA (LOG-004), bloqueio por excesso de tentativas (LOG-006), Recuperação de Senha, Verificação de E-mail, KYC.
+**Fora de escopo** (não implementado aqui, tratado como débito técnico documentado): MFA/2FA (LOG-004), Recuperação de Senha, Verificação de E-mail, KYC. (Bloqueio por excesso de tentativas — LOG-006 — foi implementado numa emenda posterior, ver "Emenda (pós-implementação)" abaixo.)
 
 ---
 
@@ -93,7 +95,7 @@ Log estruturado, mesmo padrão de `RegisterUser` (`this.logger.log/warn` com `op
 
 Adicionados ao mapa de `DomainErrorFilter` (ADR 0004, `src/infrastructure/http/domain-error.filter.ts`): `INVALID_CREDENTIALS` → 401, `ACCOUNT_SUSPENDED` → 403, `USER_NOT_FOUND` → 401 (mesmo status de sessão inválida — ver Rationale abaixo).
 
-### Frontend — Bootstrap mínimo
+### Frontend Web — Bootstrap mínimo
 
 Como `App.tsx` ainda é o boilerplate do Vite e não existe cliente HTTP nem roteador configurado, este ADR inclui o bootstrap mínimo necessário para Login/Logout funcionarem de ponta a ponta:
 
@@ -104,7 +106,7 @@ Como `App.tsx` ainda é o boilerplate do Vite e não existe cliente HTTP nem rot
 - **Página de Login** (`src/pages/login-page.tsx`): formulário e-mail/senha, chama `authService.login`, popula `useAuthStore` com o usuário retornado, redireciona para a rota protegida de exemplo (ou para `location.state.from`, padrão já usado em `ProtectedRoute`).
 - **Bootstrap de sessão**: no carregamento inicial da aplicação, chama `authService.getMe()`; sucesso popula `useAuthStore.setUser`, falha (401) mantém `user: null`; em ambos os casos `setLoading(false)` ao final — consistente com o uso de `isLoading` já feito por `ProtectedRoute`.
 
-### Rationale
+### Rationale (Backend / Frontend Web)
 
 **Por que relaxar LOG-002 em vez de bloquear login até Verificação de E-mail existir?**
 Bloquear login incondicionalmente para contas não verificadas, sem que exista nenhum caminho para verificá-las (token gerado nunca é persistido), tornaria o sistema inutilizável por qualquer usuário cadastrado — não é um trade-off aceitável para uma decisão que pode ser revertida quando Verificação de E-mail (fora de escopo deste ADR) for implementada. A decisão é documentada explicitamente aqui para não ser confundida com um descuido.
@@ -123,6 +125,164 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 
 ---
 
+## Mobile (`mybitcoin-app`) — Tela de Login
+
+**Data:** 2026-08-12. Primeira integração real do mobile com a API — antes desta decisão, `mybitcoin-app` era um template Expo Router quase padrão, sem nenhuma chamada de rede, store Zustand ou estratégia de sessão. Estabelece o padrão de networking, cache e sessão que toda futura integração no mobile segue.
+
+O front (`mybitcoin-front`) já resolve login com o fluxo descrito nas seções acima (React Router, TanStack Query, Zustand só para `kycStatus`, Axios com cookies + CSRF, react-hook-form + zod). Esta seção porta esse mesmo fluxo para o mobile, adaptado às restrições do React Native.
+
+### Forças em Jogo (Mobile)
+
+- A API (`apps/mybitcoin-api/src/modules/identity/presentation/sessions.controller.ts`, `session-cookies.ts`) só suporta sessão via cookie — não existe endpoint de token. Não é opção trocar a estratégia de sessão unilateralmente no mobile.
+- React Native não tem `document.cookie` nem gerencia cookies automaticamente como um browser.
+- Expo Router é file-based e, à época, não tinha nenhuma estrutura de grupos/stack — só as tabs renderizadas direto no layout raiz.
+- RNR (React Native Reusables) não tem um componente `Field`/`FieldError` equivalente ao shadcn.
+- Regras de negócio de login já implementadas na API (`docs/bussiness/02-identidade-e-acesso.md`, LOG-001 a LOG-006): apenas contas ativas autenticam, mensagem de erro não revela qual campo está errado (LOG-003), bloqueio temporário após excesso de falhas (LOG-006) — tudo isso já é tratado no `authService`/`handleApiError` do front e deve ser replicado tal como está, não redecidido aqui.
+
+### Decisão (Mobile)
+
+Portar o fluxo do front quase 1:1 (types, service, hooks, store), com as seguintes decisões:
+
+**1. Sessão via cookie jar nativo.** `@preeternal/react-native-cookie-manager` (fork mantido/TurboModule do `@react-native-cookies/cookies`, que está deprecado) — API idêntica (`CookieManager.get(url)`). O RN já persiste `Set-Cookie` automaticamente no cookie jar nativo; só precisa **ler** o `__Host-csrf` pra mandar como header `X-CSRF-Token` em mutations, exatamente como o front faz com `document.cookie`.
+
+Ponto de atenção assumido e aceito: o cookie `__Host-session`/`__Host-csrf` tem o atributo `Secure`, que exige HTTPS. Contra um backend `http://localhost:3000` em dev isso pode não persistir no cookie jar nativo. Implementado fiel ao front; se isso se confirmar um bloqueio em dev, é um ajuste de ambiente (ex: proxy HTTPS local), não uma mudança de arquitetura.
+
+Como isso é um módulo nativo, **o app sai do Expo Go a partir desta mudança** — passa a exigir dev client (`npx expo run:android` / `run:ios`).
+
+**Exceção justificada às convenções do projeto mobile:** a sessão (`__Host-session`) não vai para `expo-secure-store` — não é um token que a aplicação lê, guarda ou gerencia manualmente; é um cookie HTTP opaco ao JavaScript, gerenciado pelo próprio stack de rede nativo do RN. Se um dia a API expuser um token gerenciado pela app (ex: refresh token para mobile), esse token vai para `expo-secure-store`, seguindo a regra normalmente.
+
+**Base URL da API:** `process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'` — mesma convenção do front (`VITE_API_URL ?? 'http://localhost:3000'`), adaptada ao prefixo `EXPO_PUBLIC_` que o Expo exige para expor env vars ao bundle do cliente.
+
+**Refetch em foco/reconexão (React Native, TanStack Query):** ao contrário do browser, o TanStack Query no RN não reavalia queries automaticamente quando o app volta de background ou a rede reconecta — comportamento *opt-in* nesta plataforma. `src/lib/query-client.ts` configura `onlineManager` (via `expo-network`) e `focusManager` (via `AppState`, ignorado na web).
+
+**2. Navegação: `Stack.Protected`** (padrão oficial do Expo Router para SDK 57, https://docs.expo.dev/router/advanced/authentication/). Reestrutura `src/app/`:
+
+```
+src/app/
+├── _layout.tsx        ← RootNavigator: <Stack> com Stack.Protected guardado por useCurrentUser()
+├── login.tsx           ← sempre acessível, fora do grupo protegido
+└── (tabs)/
+    ├── _layout.tsx     ← importa e renderiza o AppTabs (NativeTabs) já existente
+    ├── index.tsx        ← movido de src/app/index.tsx (sem mudança de conteúdo)
+    └── explore.tsx      ← movido de src/app/explore.tsx (sem mudança de conteúdo)
+```
+
+O gate de splash já existente (`fontsLoaded` em `_layout.tsx`) passa a esperar também `useCurrentUser()` resolver (`isPending`), pra não desenhar `login`/`(tabs)` antes de saber se há sessão.
+
+**3. Formulário sem `Field`/`FieldError`.** RNR não tem esse primitivo. Montado manualmente com `Label` + `Input` + um `<Text>` de erro por campo — sem criar uma abstração `Field` nova (só esta tela usa isso; evita over-engineering até que um segundo formulário apareça).
+
+**4. Brand panel sem `<img>`.** Os SVGs do front (`wave-haikei.svg`, `logo-text-horizontal-white.svg`) foram copiados para `assets/images/` e renderizados via `expo-image`.
+
+### Rationale (Mobile)
+
+**`Stack.Protected` vs. `if (!user)` manual:** um `if` evitaria mover arquivos, mas `login` nunca seria uma rota real — sem deep-link, sem back-button correto. `Stack.Protected` suporta deep link direto pra `/login` e redireciona automaticamente quando o guard muda (ex: logout).
+
+**Sem Context/`useSession` próprio:** duplicaria a fonte de verdade. O front já decidiu que "quem está logado" vive **só** no cache do TanStack Query (`useCurrentUser`), nunca em um Context paralelo — o mobile segue o mesmo padrão, usando `useCurrentUser()` como fonte do guard.
+
+### Impacto nas Áreas (Mobile)
+
+| Área | Arquivos afetados | O que muda |
+|------|------------------|-----------|
+| Rotas (telas) | `src/app/_layout.tsx` (reescrito), `src/app/login.tsx` (novo), `src/app/(tabs)/_layout.tsx` (novo), `src/app/(tabs)/index.tsx` e `explore.tsx` (movidos) | Login passa a ser rota protegida por `Stack.Protected`; tabs passam a viver num grupo |
+| Stores | `src/stores/use-auth-store.ts` (novo) | `kycStatus` — único estado global que não vem de fetch, igual ao front |
+| Hooks | `src/hooks/use-login-mutation.ts`, `src/hooks/use-current-user.ts` (novos) | Mutation de login + query de usuário atual |
+| Services | `src/services/auth.service.ts` (novo) | `login`, `logout`, `getMe` |
+| Lib | `src/lib/api-client.ts`, `src/lib/api-errors.ts`, `src/lib/cookies.ts` + `.web.ts`, `src/lib/query-client.ts` (novos) | Cliente axios, mapeamento de erro pt-BR, leitura de CSRF (native/web), `QueryClient` (+ `onlineManager`/`focusManager`) |
+| Types | `src/types/auth.ts`, `src/types/auth.schema.ts` (novos) | Mesmos tipos do front |
+| Components | `src/components/auth/login-form.tsx`, `src/components/auth/auth-brand-panel.tsx` (novos) | Formulário e painel de marca |
+| Assets | `assets/images/wave-haikei.svg`, `assets/images/logo-text-horizontal-white.svg` (copiados do front) | Brand panel |
+| Config | `package.json` (8 deps novas), `.env.example` (novo) | Ver Plano de Implementação (Mobile) |
+
+**Não incluído nesta tela:** `ThemeToggle` manual do front (mobile já segue o tema do sistema); página `/kyc` e `requiredKyc` do `ProtectedRoute` do front (não existe tela de KYC no mobile ainda).
+
+**Decisão explícita sobre `use-auth-store.ts` sem consumidor ainda:** criar a store agora, mesmo sem nenhuma tela lendo `kycStatus` nesta tarefa, é uma exceção deliberada à regra de não antecipar estado Zustand — decisão do usuário: manter por paridade 1:1 com o front, já que a tela de KYC é o próximo ADR natural depois deste.
+
+### Contratos de Dados (Mobile)
+
+Idênticos aos do backend (ver seções acima): `POST /auth/login` (`{ email, password }` → `{ userId, name, email, status }`), `GET /auth/me` (→ `{ id, name, email, status }`), erro no formato `{ statusCode, code, message, details? }`.
+
+### Estratégia de Estado (Mobile)
+
+| Dado | Onde vive | Motivo |
+|------|-----------|--------|
+| Usuário autenticado | TanStack Query (`['auth','me']`, via `useCurrentUser`) | Fonte única de verdade — igual ao front |
+| `kycStatus` | Zustand (`useAuthStore`) | Não vem de fetch ainda; cross-screen |
+| Cookie de sessão (`__Host-session`) | Cookie jar nativo | Nunca em `AsyncStorage`/Zustand |
+| CSRF token | Lido on-demand do cookie jar (`src/lib/cookies.ts`), nunca guardado em estado | Mesma vida útil do cookie |
+| Estado do formulário | `react-hook-form` local | Só a tela de login usa |
+
+### Plano de Implementação (Mobile)
+
+0. Dependências: `axios`, `zod`, `react-hook-form`, `@hookform/resolvers`, `@tanstack/react-query`, `zustand` (JS puro) + `@preeternal/react-native-cookie-manager`, `expo-network` (via `expo install`, nativas). `.env.example` com `EXPO_PUBLIC_API_URL=http://localhost:3000`.
+1. Tipos (`src/types/`): `auth.ts`, `auth.schema.ts` (idênticos ao front)
+2. Lib (`src/lib/`): `api-errors.ts`, `cookies.ts`/`cookies.web.ts`, `api-client.ts`, `query-client.ts` (com `onlineManager`/`focusManager`)
+3. Service (`src/services/`): `auth.service.ts`
+4. Store (`src/stores/`): `use-auth-store.ts`
+5. Hooks (`src/hooks/`): `use-current-user.ts`, `use-login-mutation.ts`
+6. Componentes (`src/components/auth/`): `auth-brand-panel.tsx`, `login-form.tsx`
+7. Rotas (`src/app/`): mover `(tabs)/index.tsx`/`explore.tsx`, criar `(tabs)/_layout.tsx` (só importa/renderiza `AppTabs` já existente), `login.tsx`, reescrever `_layout.tsx`
+
+### Estados da UI (Mobile)
+
+| Estado | Comportamento |
+|--------|--------------|
+| Loading (auth inicial) | Splash existente permanece visível até `fontsLoaded && !isPending` |
+| Loading (submit do form) | Botão desabilitado, texto "Entrando..." (igual ao front) |
+| Erro de validação (campo) | Texto `text-destructive` abaixo do input |
+| Erro da API (`root`) | Mapeado por `handleApiError` (LOG-003 nunca revela qual campo) |
+| Offline/erro de rede | `handleApiError` já cobre |
+| Sucesso | Cache de `useCurrentUser` populado; `Stack.Protected` redireciona pra `(tabs)` automaticamente |
+
+### Plataformas e Acessibilidade (Mobile)
+
+- **Divergência por plataforma:** só em `src/lib/cookies.ts` (`.ts` native / `.web.ts` com `document.cookie`).
+- **Touch targets:** `Button` do RNR já usa `h-10`/`h-11` (≥ 44px) por padrão.
+- **Acessibilidade nativa:** `Label` (`@rn-primitives/label`) recebe `nativeID` e o `Input` correspondente recebe `aria-labelledby` apontando pro mesmo valor.
+- **Safe area:** tela de login usa `SafeAreaView`.
+- **Expo Go:** deixa de funcionar para o app inteiro a partir desta mudança (módulo nativo do cookie manager) — precisa de dev client.
+
+### Edge Cases & Erros (Mobile)
+
+| Caso | Comportamento decidido |
+|------|----------------------|
+| Credenciais inválidas | Mensagem genérica "E-mail ou senha inválidos." (LOG-003) |
+| Conta suspensa | "Sua conta foi suspensa. Entre em contato com o suporte." |
+| Excesso de tentativas (LOG-006) | "Muitas tentativas de login. Tente novamente em alguns minutos." |
+| Sem rede / API fora do ar | "Erro de conexão. Verifique sua internet." |
+| Usuário já autenticado abre `/login` | `Stack.Protected` redireciona pra `(tabs)` automaticamente |
+| App reaberto com sessão válida | `useCurrentUser` resolve com usuário → entra direto em `(tabs)` |
+| Cookie `Secure` rejeitado contra `http://localhost` em dev | Risco conhecido — não tratado como bug de código |
+
+### Consequências (Mobile)
+
+**Positivas:** estabelece o padrão de networking (axios + TanStack Query + api-errors) que toda integração futura no mobile reusa; sessão idêntica à do front, zero mudança no backend.
+
+**Negativas / Trade-offs:** app sai do Expo Go a partir de agora (módulo nativo de cookie); cookies `Secure` podem não persistir contra backend `http://` em dev no dispositivo/emulador.
+
+### Decisões do Usuário (Mobile)
+
+- 2026-08-12 — "Como tratar sessão/autenticação no mobile?" → Cookie jar nativo, fiel ao front (não token).
+- 2026-08-12 — Confirmado: não portar `ThemeToggle` manual (mobile já segue tema do sistema).
+- 2026-08-12 — Confirmado: montar formulário manualmente (sem `Field`), já que RNR não tem esse primitivo e só há um formulário até agora.
+- 2026-08-12 — "Criar `use-auth-store.ts` (`kycStatus`) mesmo sem consumidor nesta tarefa?" → Manter, por paridade 1:1 com o front.
+
+### Validação (Mobile, Estágio 2) — 2026-08-12
+
+**Veredito:** 🔁 REVISAR — 2 gaps ALTO (falta passo de instalar dependências; falta tratar refetch em foco/reconexão do TanStack Query no RN), 4 gaps MÉDIO (base URL sem fonte definida; divergência não reconhecida da regra `expo-secure-store`; `use-auth-store.ts` sem consumidor; mecanismo de acessibilidade divergente do padrão da lib instalada). Todos corrigidos na revalidação abaixo — ver decisões incorporadas nas seções "Decisão (Mobile)", "Plano de Implementação (Mobile)" e "Plataformas e Acessibilidade (Mobile)" acima.
+
+### Validação (Mobile, Estágio 2, revalidação) — 2026-08-12
+
+**Veredito:** ✅ **APROVA** — os 2 gaps ALTO e os 4 MÉDIO da rodada anterior foram fechados e reverificados contra o código/documentação real (dependências existentes no npm registry, `Stack.Protected` confirmado em `expo-router@57.0.11`, API real de `@rn-primitives/label`). 3 gaps BAIXO remanescentes eram só precisão de texto (contagem de dependências, imprecisão sobre qual lib exige rebuild), sem impacto de arquitetura — corrigidos.
+
+### Referências (Mobile)
+
+- `apps/mybitcoin-front/src/pages/login-page.tsx`, `src/components/auth/*`, `src/types/auth*.ts`, `src/services/auth.service.ts`, `src/lib/api-client.ts`, `src/lib/api-errors.ts`, `src/hooks/use-login-mutation.ts`, `src/hooks/use-current-user.ts`, `src/stores/use-auth-store.ts`, `src/components/protected-route.tsx`, `src/App.tsx`
+- `apps/mybitcoin-api/src/modules/identity/presentation/sessions.controller.ts`, `session-cookies.ts`
+- `docs/bussiness/02-identidade-e-acesso.md` (LOG-001 a LOG-006)
+- https://docs.expo.dev/router/advanced/authentication/ (padrão `Stack.Protected`, SDK 57)
+
+---
+
 ## Impacto nos Bounded Contexts
 
 | Bounded Context | Impacto | Como se comunica |
@@ -131,12 +291,13 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 | financial | Nenhum | — |
 | shared | `DomainError` reutilizado | Import |
 | infrastructure (compartilhada) | `DomainErrorFilter` (ADR 0004) ganha 3 novas entradas no mapa código→status | Edição do arquivo existente |
-| frontend (`mybitcoin-front`) | Bootstrap de roteador, cliente HTTP, service de auth, página de login, store sem campo `token` | Novo projeto consumidor da API |
+| frontend web (`mybitcoin-front`) | Bootstrap de roteador, cliente HTTP, service de auth, página de login, store sem campo `token` | Novo projeto consumidor da API |
+| mobile (`mybitcoin-app`) | Bootstrap de networking (axios/TanStack Query), sessão via cookie jar nativo, `Stack.Protected`, telas/hooks/store de auth | Novo projeto consumidor da API |
 
 **Entidades de domínio afetadas:** nenhuma nova (reutiliza `User`, `Session` existentes)
 **Domain Events:** nenhum novo — `Login` não cria evento (falha de login não é fato de domínio auditável via evento neste ADR, ver decisão de auditoria por log); `Logout`/`RevokeAllSessions` reusam `SessionRevoked` (ADR 0004)
 **Interfaces de repositório afetadas:** nenhuma nova — `UserRepository`, `UserReadRepository`, `SessionRepository` já têm os métodos necessários
-**Migrations necessárias:** não
+**Migrations necessárias:** não (backend). Mobile: nenhuma (sem persistência própria além do cookie jar nativo).
 
 ---
 
@@ -179,13 +340,17 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
   - [ ] Log estruturado (LOG-005) em cada branch de `POST /auth/login` (início, sucesso, credenciais inválidas, conta suspensa)
 - [ ] Swagger: exemplos de sucesso e erro para os 4 endpoints, seguindo o padrão de `register` (`@ApiOperation`, `@ApiOkResponse`, `@ApiUnauthorizedResponse`, `@ApiForbiddenResponse`)
 
-### 5. Frontend (`mybitcoin-front/src/`)
+### 5. Frontend Web (`apps/mybitcoin-front/src/`)
 - [ ] `lib/api-client.ts` — wrapper `fetch` com `credentials: 'include'`, injeção de `X-CSRF-Token` em métodos mutantes, integração com `ApiError`/`parseApiError` existentes
 - [ ] `services/auth.service.ts` — `login`, `logout`, `logoutAll`, `getMe`
 - [ ] `stores/use-auth-store.ts` — remover campo `token`
 - [ ] `App.tsx` — configurar `react-router-dom` (`createBrowserRouter`), rota pública `/login`, rota protegida mínima de exemplo
 - [ ] `pages/login-page.tsx` — formulário de login, integração com `authService.login` + `useAuthStore`
 - [ ] Bootstrap de sessão no carregamento da app — chama `getMe()`, popula ou limpa `useAuthStore`, `setLoading(false)` ao final
+
+### 6. Mobile (`apps/mybitcoin-app/`)
+
+Ver "Plano de Implementação (Mobile)" na seção "Mobile (`mybitcoin-app`) — Tela de Login" acima.
 
 ---
 
@@ -200,12 +365,14 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 | Conta `PENDING_EMAIL_VERIFICATION` | — | Login permitido (LOG-002 relaxado, ver Rationale) |
 | Conta `ACTIVE` | — | Login permitido |
 | MFA habilitado (LOG-004) | — | Fora de escopo — MFA não existe no projeto; não implementado |
-| Excesso de tentativas (LOG-006) | — | Fora de escopo — rate limiting/lockout não existe no projeto; não implementado |
+| Excesso de tentativas (LOG-006) | — | Implementado numa emenda posterior (ver "Emenda (pós-implementação)") |
 | Logout sem cookie de sessão | — (nunca lança) | `204` idempotente, cookies limpos de qualquer forma |
 | Logout com sessão já expirada/revogada | — (nunca lança) | `204` idempotente |
 | Logout-all sem sessão válida | — (guard rejeita antes do use case) | `401` |
 | `GET /auth/me` sem sessão válida | — (guard rejeita antes do use case) | `401` |
 | `GET /auth/me` com sessão válida mas `userId` não resolve para um `User` existente (`UserReadRepository.findById` → `null`) | `UserNotFoundError` | `401`, cookies limpos — tratado como invariante quebrada (sessão não pode existir sem usuário), não como 404 de negócio normal (ver Rationale) |
+
+(Edge cases específicos do mobile: ver "Edge Cases & Erros (Mobile)" acima.)
 
 ---
 
@@ -254,9 +421,9 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
    → GetCurrentUser.execute({ userId })
    → 200 { id, name, email, status }
 
-5. (Frontend) Carregamento da aplicação
+5. (Frontend Web / Mobile) Carregamento da aplicação
    → authService.getMe()
-   → Sucesso: useAuthStore.setUser(user)
+   → Sucesso: useAuthStore.setUser(user) / cache de useCurrentUser populado
    → Falha (401): useAuthStore.setUser(null)
    → useAuthStore.setLoading(false)
 ```
@@ -270,12 +437,14 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 - Erro genérico para credenciais inválidas fecha a superfície de enumeração de contas via login (LOG-003)
 - `Logout` idempotente elimina uma classe inteira de bugs de frontend (race condition entre múltiplas abas fazendo logout simultâneo, retry após timeout)
 - `mybitcoin-front` sai do boilerplate para uma base mínima funcional (roteador, cliente HTTP, fluxo de auth real)
+- `mybitcoin-app` estabelece o padrão de networking (axios + TanStack Query + api-errors) que toda integração futura no mobile reusa, com sessão idêntica à do front e zero mudança no backend
 
 **Negativas / Trade-offs:**
 - LOG-002 relaxado é uma divergência documentada, não uma implementação completa da regra — precisa ser revisitada (endurecida de volta) quando Verificação de E-mail for implementada; risco de esquecimento se não houver um lembrete além deste ADR
-- LOG-004 (MFA) e LOG-006 (lockout por tentativas) ficam sem nenhuma proteção — a API aceita tentativas de login ilimitadas hoje; aceitável para o estágio atual do projeto, mas é uma lacuna de segurança real, não apenas teórica
+- LOG-004 (MFA) fica sem nenhuma proteção — aceitável para o estágio atual do projeto, mas é uma lacuna de segurança real, não apenas teórica (LOG-006, lockout por tentativas, foi endereçado numa emenda posterior)
 - Auditoria via log estruturado (não persistida em tabela/evento consultável) significa que investigar tentativas de login históricas depende de um sistema de agregação de logs externo, que o projeto não tem hoje
 - Escopo de frontend maior que "só login/logout": inclui bootstrap de roteador e cliente HTTP que qualquer feature futura de UI também precisaria — decisão consciente de fazer uma vez aqui em vez de cada feature reinventar
+- Mobile sai do Expo Go a partir desta mudança (módulo nativo de cookie) — todo teste local passa a exigir dev client; cookies `Secure` podem não persistir contra backend `http://` em dev
 
 ---
 
@@ -293,6 +462,10 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 - 2026-08-01 — Idempotência do logout de sessão única → `POST /auth/logout` sem `SessionAuthGuard`, sempre `204`, mesmo sem cookie válido
 - 2026-08-01 — Escopo do frontend → Bootstrap completo (roteador + cliente HTTP + página de login), não só camada de integração
 - 2026-08-01 — Gap 4 da validação (login CSRF / fixação de sessão via form POST cross-site em `POST /auth/login`, sem CSRF possível porque não há sessão prévia) → Aceito como fora de escopo deste ADR, mesma categoria de risco já aceito para LOG-004/LOG-006. Não bloqueia aprovação
+- (Mobile) 2026-08-12 — "Como tratar sessão/autenticação no mobile?" → Cookie jar nativo, fiel ao front (não token)
+- (Mobile) 2026-08-12 — Confirmado: não portar `ThemeToggle` manual (mobile já segue tema do sistema)
+- (Mobile) 2026-08-12 — Confirmado: montar formulário manualmente (sem `Field`), já que RNR não tem esse primitivo e só há um formulário até agora
+- (Mobile) 2026-08-12 — "Criar `use-auth-store.ts` (`kycStatus`) mesmo sem consumidor nesta tarefa?" → Manter, por paridade 1:1 com o front
 
 ---
 
@@ -303,6 +476,7 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 - `docs/bussiness/02-identidade-e-acesso.md` — Regras LOG-001 a LOG-006, OUT-001 a OUT-003
 - `docs/architecture/02-clean-architecture-ddd-fundamentos.md` — Princípios
 - `docs/architecture/03-estrutura-projeto.md` — Estrutura de pastas
+- (Mobile) ver "Referências (Mobile)" na seção "Mobile (`mybitcoin-app`) — Tela de Login" acima
 
 ---
 
@@ -320,41 +494,30 @@ Logout de uma sessão específica é sobre "esquecer este cookie", uma operaçã
 | B. Value Objects | Conceitos sem identidade cobertos | OK | Reusa `Email`, `UserId`, `UserStatus` existentes; não precisa de VO novo |
 | B. Invariantes no aggregate | — | N/A | Nenhuma invariante nova de `User`/`Session` introduzida |
 | B. Domain Events | Fatos relevantes emitem evento | OK, com nota | `Logout` reusa `SessionRevoked` (ADR 0004); `Login` conscientemente não emite evento (decisão documentada na seção "Rationale" e em "Decisões do Usuário" — auditoria via log estruturado). Coerente, não é omissão silenciosa |
-| **B. Erros tipados — mensagem não deve vazar informação que a própria regra pretende esconder** | — | **GAP — ALTO** | O padrão já estabelecido no módulo embute o valor recebido na mensagem do erro, que é devolvida ao cliente **verbatim** por `DomainErrorFilter` (`domain-error.filter.ts:22`: `response.status(status).json({ code: error.code, message: error.message })`) — ver `EmailAlreadyExistsError` (`super(\`Email '${email}' is already registered\`)`) e `SessionNotFoundError` (`super(\`Session '${sessionId}' not found\`)`). O ADR especifica que `InvalidCredentialsError` deve ser **o mesmo erro** para "e-mail não encontrado" e "senha errada" (LOG-003, seção Decisão item 3), mas não diz explicitamente que a mensagem **não pode conter o e-mail informado** nem qualquer dado que distinga os dois casos. Se o executor seguir o padrão existente do módulo (que sempre embute o parâmetro recebido), a mensagem viraria algo como `"Invalid credentials for 'user@example.com'"` — o que não vaza qual campo errou, mas ainda **confirma a existência da conta** ao ecoar o e-mail de volta com uma mensagem construída a partir dele vs. uma mensagem genérica estática, e mais grave: um erro de copy-paste do padrão (`super(\`Email '${email}' not found\`)` em vez do genérico) reintroduziria a distinção que LOG-003 existe para eliminar |
-| **B. Erros tipados — `AccountSuspendedError` expõe identificador interno ao cliente** | — | **GAP — MÉDIO** | Mesma mecânica do gap acima: se `AccountSuspendedError` seguir o padrão de `SessionNotFoundError(sessionId)` e embutir `userId` (UUID interno) na mensagem, esse UUID vaza para a resposta HTTP sem necessidade — o cliente já sabe qual conta tentou logar (foi ele que enviou o e-mail), não precisa do UUID interno do agregado na mensagem de erro |
+| **B. Erros tipados — mensagem não deve vazar informação que a própria regra pretende esconder** | — | **GAP — ALTO** | O padrão já estabelecido no módulo embute o valor recebido na mensagem do erro, que é devolvida ao cliente **verbatim** por `DomainErrorFilter` (`domain-error.filter.ts:22`: `response.status(status).json({ code: error.code, message: error.message })`) — ver `EmailAlreadyExistsError` (`super(\`Email '${email}' is already registered\`)`) e `SessionNotFoundError` (`super(\`Session '${sessionId}' not found\`)`). O ADR especifica que `InvalidCredentialsError` deve ser **o mesmo erro** para "e-mail não encontrado" e "senha errada" (LOG-003, seção Decisão item 3), mas não diz explicitamente que a mensagem **não pode conter o e-mail informado** nem qualquer dado que distinga os dois casos |
+| **B. Erros tipados — `AccountSuspendedError` expõe identificador interno ao cliente** | — | **GAP — MÉDIO** | Mesma mecânica do gap acima: se `AccountSuspendedError` seguir o padrão de `SessionNotFoundError(sessionId)` e embutir `userId` (UUID interno) na mensagem, esse UUID vaza para a resposta HTTP sem necessidade |
 | C. Precisão monetária | — | N/A | Nenhum valor monetário |
 | D. UnitOfWork/atomicidade | `Login` só lê, `Logout`/`RevokeAllSessions` só escrevem em `sessions` (tabela única) | OK | Nenhuma operação multi-tabela proposta |
-| **D. Consistência de leitura (ADR 0003)** | `Login` usa repositório de escrita (não a réplica) para checar credenciais | OK, verificado | ADR 0003 (`0003-read-write-database-replication.md:395`) recomenda explicitamente: "casos que exigem leitura consistente com a última escrita devem usar o repositório de escrita". A seção "Decisão" deste ADR 0005 especifica `Login` injetando `UserRepository` (write), não `UserReadRepository` — correto, evita falso `InvalidCredentialsError` por lag de réplica logo após um cadastro |
+| **D. Consistência de leitura (ADR 0003)** | `Login` usa repositório de escrita (não a réplica) para checar credenciais | OK, verificado | ADR 0003 (`0003-read-write-database-replication.md:395`) recomenda explicitamente usar o repositório de escrita quando é preciso ler consistente com a última escrita — correto, evita falso `InvalidCredentialsError` por lag de réplica logo após um cadastro |
 | E. Schema | Nenhuma migration | OK | Confirmado — nenhuma coluna/tabela nova necessária para Login/Logout/`GET /auth/me` |
 | F. Edge cases — registro inexistente | — | OK | Tabela de Edge Cases cobre e-mail não cadastrado, senha incorreta, conta suspensa |
-| **F. Edge cases — `GetCurrentUser` quando `findById` retorna `null`** | — | **GAP — MÉDIO** | A convenção do projeto (`CLAUDE.md`: "Métodos `find*` retornam entidade de domínio ou `null` — nunca `undefined`") implica que `UserReadRepository.findById` pode retornar `null`. O ADR não decide o comportamento desse caso — a seção "Plano de Teste" apenas registra a ambiguidade ("decidir explicitamente... não deve ocorrer em uso normal") sem resolvê-la na tabela de Edge Cases, que é o lugar obrigatório para esse tipo de decisão segundo o próprio template da skill. Fica sem erro tipado definido para um caminho de código que existe e precisa compilar/retornar algo |
+| **F. Edge cases — `GetCurrentUser` quando `findById` retorna `null`** | — | **GAP — MÉDIO** | A convenção do projeto implica que `UserReadRepository.findById` pode retornar `null`, sem decisão explícita na tabela de Edge Cases |
 | F. Edge cases — operação duplicada/idempotência | Logout idempotente | OK | Coberto explicitamente (token ausente/inválido/já revogado → sempre 204, nunca lança) |
-| F. Edge cases — falha de integração externa | N/A | N/A | Nenhuma integração externa nova (Bitcoin RPC, etc.) |
-| G. Plano de teste | Cobre os edge cases do ADR | OK, com a lacuna do gap acima | Cenários de `Login`/`Logout`/`DomainErrorFilter`/integração cobertos; falta apenas o cenário de `GetCurrentUser` com usuário não encontrado, decorrente do gap acima |
-| G. Plano de teste | Inclui integração com banco real | OK | Seção "Plano de Teste" lista testes de integração para os 4 endpoints |
-| G. Plano de teste | Verifica Regra de Dependência | OK | Implícito pela ausência de import cruzado nos use cases descritos; module já teria esse tipo de teste arquitetural em `arch-guard` na Etapa 7 da pipeline, não precisa duplicar aqui |
-| H. Plano de implementação | Ordem domain → application → infra → presentation → frontend | OK | Seções 1-5 seguem essa ordem |
-| — | Nota informativa (não é gap deste ADR) | — | `Password.create()` (política de senha CAD-003) é código morto — `RegisterUser` (`register-user.usecase.ts:53`) chama `this.hashPassword(input.password)` diretamente sobre a senha crua, nunca instancia `Password`. Ou seja, a política de senha (8+ chars, maiúscula, minúscula, número, especial) **não é hoje efetivamente aplicada** no cadastro, apesar de `WeakPasswordError` existir. Isso não é causado nem corrigido por este ADR 0005 (que só consome `user.passwordHash` já hasheado, igual `RegisterUser` faz) — registrado aqui para não ser confundido com escopo resolvido, mesmo padrão de nota que o ADR 0004 já fez para o evento `UserRegistered` morto |
-| — | Nota informativa (não é gap deste ADR) | — | `POST /auth/login` fica fora do `SessionAuthGuard` por definição (não há sessão ainda) e portanto fora da checagem de CSRF do ADR 0004 — um cross-site form POST para `/auth/login` ainda é fisicamente possível (o navegador envia o POST; `SameSite=Strict` só impede cookies *existentes* de serem anexados, não bloqueia a requisição em si) e, se o atacante souber e-mail/senha da vítima, resultaria em "login CSRF" (fixação de sessão sob controle do atacante no navegador da vítima). Risco aceito como BAIXO/fora de escopo deste ADR, mesma categoria de LOG-004/LOG-006 já deferidos — mas deve ficar registrado, não silencioso |
+| G. Plano de teste | Cobre os edge cases do ADR | OK, com a lacuna do gap acima | Cenários de `Login`/`Logout`/`DomainErrorFilter`/integração cobertos; faltava apenas o cenário de `GetCurrentUser` com usuário não encontrado |
+| H. Plano de implementação | Ordem domain → application → infra → presentation → frontend | OK | Seções seguem essa ordem |
 
 ### Gaps (ordenados por severidade)
 
-| # | Severidade | Gap | Evidência | Correção exigida |
-|---|---|---|---|---|
-| 1 | ALTO | `InvalidCredentialsError` não tem mensagem especificada; o padrão existente do módulo embutiria o e-mail recebido na mensagem, arriscando reabrir a enumeração de contas que LOG-003 existe para fechar | `domain-error.filter.ts:22` (mensagem vai ao cliente verbatim); `email-already-exists.error.ts:7`, `session-not-found.error.ts:7` (padrão de embutir o parâmetro) | Especificar no ADR, na seção "Decisão" ou no Plano de Implementação: `InvalidCredentialsError` usa uma mensagem **estática**, sem interpolar e-mail/senha/qualquer dado do request (ex.: `super('Invalid email or password')`), idêntica nos dois branches (e-mail não encontrado e senha errada) |
-| 2 | MÉDIO | `AccountSuspendedError` sem mensagem especificada; risco de embutir `userId` (UUID interno) na resposta HTTP seguindo o padrão de `SessionNotFoundError` | `session-not-found.error.ts:7` (padrão do módulo) | Especificar mensagem sem UUID interno, ex.: `super('This account has been suspended')`, mesmo que o construtor ainda receba `userId` para uso em log estruturado (não na mensagem exposta) |
-| 3 | MÉDIO | `GetCurrentUser` sem decisão de erro tipado para `findById` retornando `null` | Seção "Plano de Teste" registra a ambiguidade sem resolvê-la; ausente da tabela "Edge Cases & Erros de Domínio" | Adicionar linha na tabela de Edge Cases: `userId` de sessão válida não encontrado em `users` → erro tipado (ex.: `UserNotFoundError`, mapeado a 401 em `DomainErrorFilter`, mesmo tratamento de sessão inválida) — trata como violação de invariante (sessão não pode existir sem usuário), não como fluxo de negócio esperado |
-| 4 | BAIXO (aceito, registrar) | `POST /auth/login` sem proteção contra "login CSRF" (fixação de sessão via form POST cross-site) | Nota informativa acima | Nenhuma correção exigida para aprovação — aceitar explicitamente como fora de escopo (mesma categoria de LOG-004/006), já registrado na seção "Consequências" ou como nota de rastreabilidade |
-
-### Cobertura
-
-- **OK:** Regra de Dependência, uso correto do repositório de escrita para `Login` (consistente com ADR 0003), ausência de migrations, idempotência de `Logout`, ordem do plano de implementação, plano de teste (exceto o gap 3)
-- **GAP:** especificação de mensagem de dois erros de domínio novos (1 ALTO, 1 MÉDIO), edge case de `GetCurrentUser` sem decisão (1 MÉDIO), login CSRF fora de escopo (1 BAIXO, aceitável)
-- **N/A:** DDD (nenhuma entidade/VO nova), precisão monetária, schema/migrations
+| # | Severidade | Gap | Correção exigida |
+|---|---|---|---|
+| 1 | ALTO | `InvalidCredentialsError` sem mensagem estática especificada | Mensagem estática, sem interpolação, ex.: `super('Invalid email or password')` |
+| 2 | MÉDIO | `AccountSuspendedError` sem mensagem especificada | Mensagem sem UUID interno, ex.: `super('This account has been suspended')` |
+| 3 | MÉDIO | `GetCurrentUser` sem decisão de erro tipado para `findById` retornando `null` | Novo erro tipado (`UserNotFoundError`), mapeado a 401 |
+| 4 | BAIXO (aceito, registrar) | `POST /auth/login` sem proteção contra "login CSRF" | Aceito explicitamente como fora de escopo |
 
 ### Próximo passo
 
-Rode `/adr-architect` para amendar o ADR endereçando o gap ALTO (1) e o gap MÉDIO (2) — ambos são especificações de mensagem de erro, correção pontual e rápida. O gap MÉDIO (3) também deve ser resolvido antes de `/adr-executor` (decisão de erro tipado faltando). O gap BAIXO (4) pode ser aceito explicitamente pelo usuário sem retornar ao architect. Depois, re-valide.
+Rode `/adr-architect` para amendar o ADR endereçando os gaps ALTO/MÉDIO. Depois, re-valide.
 
 ---
 
@@ -364,12 +527,12 @@ Amenda aplicada pelo `/adr-architect` endereçando os gaps do Estágio 2:
 
 | Gap | Status | O que mudou |
 |---|---|---|
-| 1 (ALTO — `InvalidCredentialsError` podia vazar e-mail via mensagem) | Corrigido | Construtor sem parâmetros, mensagem estática `'Invalid email or password'`, idêntica para "e-mail não encontrado" e "senha errada" (seção "Decisão" → "Backend — Erros de domínio novos") |
+| 1 (ALTO — `InvalidCredentialsError` podia vazar e-mail via mensagem) | Corrigido | Construtor sem parâmetros, mensagem estática `'Invalid email or password'`, idêntica para "e-mail não encontrado" e "senha errada" |
 | 2 (MÉDIO — `AccountSuspendedError` podia vazar `userId`) | Corrigido | Construtor recebe `userId` só para log estruturado; mensagem exposta ao cliente é estática, sem o UUID |
-| 3 (MÉDIO — `GetCurrentUser` sem decisão para usuário não encontrado) | Corrigido | Novo erro `UserNotFoundError` (`code = 'USER_NOT_FOUND'`), mapeado a `401` no `DomainErrorFilter` (mesmo tratamento de sessão inválida — cookies limpos), com Rationale explicando por que `401` e não `404`. Adicionado à tabela de Edge Cases, ao Plano de Implementação (domínio) e ao Plano de Teste |
-| 4 (BAIXO — login CSRF) | Aceito, sem correção | Registrado explicitamente em "Decisões do Usuário" como risco aceito, mesma categoria de LOG-004/006 |
+| 3 (MÉDIO — `GetCurrentUser` sem decisão para usuário não encontrado) | Corrigido | Novo erro `UserNotFoundError` (`code = 'USER_NOT_FOUND'`), mapeado a `401` no `DomainErrorFilter`, com Rationale explicando por que `401` e não `404` |
+| 4 (BAIXO — login CSRF) | Aceito, sem correção | Registrado explicitamente em "Decisões do Usuário" como risco aceito |
 
-**Próximo passo:** rode `/adr-validator` novamente sobre este ADR (`0005-login-logout.md`) para confirmar que os gaps foram endereçados antes de `/adr-executor`.
+**Próximo passo:** rode `/adr-validator` novamente sobre este ADR para confirmar que os gaps foram endereçados antes de `/adr-executor`.
 
 ---
 
@@ -379,7 +542,7 @@ Amenda aplicada pelo `/adr-architect` endereçando os gaps do Estágio 2:
 
 Os 3 gaps bloqueantes da 1ª rodada (ALTO/MÉDIO) foram confirmados corrigidos: `InvalidCredentialsError` com mensagem estática, `AccountSuspendedError` sem UUID exposto, `UserNotFoundError` novo cobrindo o edge case de `GetCurrentUser`. O gap 4 (BAIXO — login CSRF) segue aceito e registrado.
 
-**Gap novo (não bloqueante):** a emenda adicionou `UserNotFoundError` à seção "Decisão", ao Rationale, à tabela de Edge Cases e ao Plano de Teste, mas não propagou para "Impacto nos Bounded Contexts" (linha 123/126), "Checklist de Arquitetura" (linha 140) e o item 3 do "Plano de Implementação" (linha 160) — o mais acionável dos quatro, por ser o checklist literal que o executor segue. Mesmo padrão de inconsistência textual que o ADR 0004 teve na sua própria 2ª rodada.
+**Gap novo (não bloqueante):** a emenda adicionou `UserNotFoundError` à seção "Decisão", ao Rationale, à tabela de Edge Cases e ao Plano de Teste, mas não propagou para "Impacto nos Bounded Contexts", "Checklist de Arquitetura" e o item 3 do "Plano de Implementação" — o mais acionável dos quatro, por ser o checklist literal que o executor segue.
 
 ## Correção aplicada — 2026-08-01
 

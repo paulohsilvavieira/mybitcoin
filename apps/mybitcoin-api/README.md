@@ -84,37 +84,37 @@ pnpm migration:dry-run   # simula a aplicação sem escrever no banco
 
 A ordem abaixo é a ordem recomendada de leitura conforme o tipo de tarefa. Não pule a documentação de negócio ao tocar em fluxos financeiros — as regras ali descritas são a fonte da verdade, não o código existente.
 
-### 1. Arquitetura do projeto (`docs/architecture/`)
+### 1. Arquitetura do projeto (`../../docs/architecture/`)
 
 Leitura obrigatória antes de criar ou mover qualquer arquivo em `src/`.
 
 | Documento | Conteúdo |
 |-----------|---------|
-| [`01-analise-projeto-anterior.md`](docs/architecture/01-analise-projeto-anterior.md) | Análise de sistemas similares de matching: o que funcionou e o que evoluir |
-| [`02-clean-architecture-ddd-fundamentos.md`](docs/architecture/02-clean-architecture-ddd-fundamentos.md) | Princípios: Regra de Dependência, as 4 camadas, DDD, UnitOfWork, erros tipados, `bigint` |
-| [`03-estrutura-projeto.md`](docs/architecture/03-estrutura-projeto.md) | Estrutura concreta de pastas e convenções de nomenclatura |
-| [`04-quando-usar-clean-architecture.md`](docs/architecture/04-quando-usar-clean-architecture.md) | Critério para decidir entre Clean Architecture e uma abordagem simples |
+| [`01-analise-projeto-anterior.md`](../../docs/architecture/01-analise-projeto-anterior.md) | Análise de sistemas similares de matching: o que funcionou e o que evoluir |
+| [`02-clean-architecture-ddd-fundamentos.md`](../../docs/architecture/02-clean-architecture-ddd-fundamentos.md) | Princípios: Regra de Dependência, as 4 camadas, DDD, UnitOfWork, erros tipados, `bigint` |
+| [`03-estrutura-projeto.md`](../../docs/architecture/03-estrutura-projeto.md) | Estrutura concreta de pastas e convenções de nomenclatura |
+| [`04-quando-usar-clean-architecture.md`](../../docs/architecture/04-quando-usar-clean-architecture.md) | Critério para decidir entre Clean Architecture e uma abordagem simples |
 
-### 2. Regras de negócio (`docs/bussiness/`)
+### 2. Regras de negócio (`../../docs/bussiness/`)
 
 Leitura obrigatória antes de implementar qualquer regra de negócio. Estes documentos são tratados como "lei" pelo projeto — em caso de dúvida entre o que o código faz e o que a documentação diz, a documentação prevalece.
 
 | Documento | Conteúdo |
 |-----------|---------|
-| [`01-visao-geral-sistema.md`](docs/bussiness/01-visao-geral-sistema.md) | Visão macro do sistema e bounded contexts |
-| [`02-identidade-e-acesso.md`](docs/bussiness/02-identidade-e-acesso.md) | Regras de cadastro, login, logout, recuperação de senha, sessão, verificação, KYC, MFA |
-| [`03-modelo-de-dominio.md`](docs/bussiness/03-modelo-de-dominio.md) | Entidades, aggregates, value objects |
-| [`04-carteiras-e-ledger-financeiro.md`](docs/bussiness/04-carteiras-e-ledger-financeiro.md) | Invariantes INV-001 a INV-014, dupla entrada, ledger |
-| [`05-mercados-de-negociacao.md`](docs/bussiness/05-mercados-de-negociacao.md) | Pares de mercado, order book |
-| [`06-order-book.md`](docs/bussiness/06-order-book.md) | Estrutura do order book |
-| [`07-matching-engine.md`](docs/bussiness/07-matching-engine.md) | Algoritmo de matching |
-| [`08-trades-maker-taker-taxas.md`](docs/bussiness/08-trades-maker-taker-taxas.md) | Maker/Taker/Charger, cálculo de taxas |
-| [`09-depositos-e-saques.md`](docs/bussiness/09-depositos-e-saques.md) | Fluxos on-chain de depósito e saque |
-| [`10-eventos-de-dominio-e-auditoria.md`](docs/bussiness/10-eventos-de-dominio-e-auditoria.md) | Domain events e auditoria |
-| [`11-invariantes-globais.md`](docs/bussiness/11-invariantes-globais.md) | Invariantes globais do sistema |
-| [`12-cenarios-bdd.md`](docs/bussiness/12-cenarios-bdd.md) | Cenários BDD (Gherkin) usados como referência de comportamento |
+| [`01-visao-geral-sistema.md`](../../docs/bussiness/01-visao-geral-sistema.md) | Visão macro do sistema e bounded contexts |
+| [`02-identidade-e-acesso.md`](../../docs/bussiness/02-identidade-e-acesso.md) | Regras de cadastro, login, logout, recuperação de senha, sessão, verificação, KYC, MFA |
+| [`03-modelo-de-dominio.md`](../../docs/bussiness/03-modelo-de-dominio.md) | Entidades, aggregates, value objects |
+| [`04-carteiras-e-ledger-financeiro.md`](../../docs/bussiness/04-carteiras-e-ledger-financeiro.md) | Invariantes INV-001 a INV-014, dupla entrada, ledger |
+| [`05-mercados-de-negociacao.md`](../../docs/bussiness/05-mercados-de-negociacao.md) | Pares de mercado, order book |
+| [`06-order-book.md`](../../docs/bussiness/06-order-book.md) | Estrutura do order book |
+| [`07-matching-engine.md`](../../docs/bussiness/07-matching-engine.md) | Algoritmo de matching |
+| [`08-trades-maker-taker-taxas.md`](../../docs/bussiness/08-trades-maker-taker-taxas.md) | Maker/Taker/Charger, cálculo de taxas |
+| [`09-depositos-e-saques.md`](../../docs/bussiness/09-depositos-e-saques.md) | Fluxos on-chain de depósito e saque |
+| [`10-eventos-de-dominio-e-auditoria.md`](../../docs/bussiness/10-eventos-de-dominio-e-auditoria.md) | Domain events e auditoria |
+| [`11-invariantes-globais.md`](../../docs/bussiness/11-invariantes-globais.md) | Invariantes globais do sistema |
+| [`12-cenarios-bdd.md`](../../docs/bussiness/12-cenarios-bdd.md) | Cenários BDD (Gherkin) usados como referência de comportamento |
 
-### 3. Registro de decisões arquiteturais (`docs/adr/`)
+### 3. Registro de decisões arquiteturais (`../../docs/adr/`)
 
 Decisões estruturais já tomadas e seus motivos ficam registradas ali como ADRs (Architecture Decision Records). Consulte antes de propor uma mudança que possa conflitar com uma decisão existente (ex.: padrão de atomicidade, escolha de tecnologia).
 
@@ -150,7 +150,7 @@ grep -r "from '.*application\|from '.*infrastructure\|from '.*presentation" src/
 **Critério para decidir onde o código vai:**
 > Se uma falha pode causar perda financeira ou acesso não autorizado → Clean Architecture. Se é CRUD sem regra de negócio → abordagem simples dentro do módulo correspondente.
 
-Detalhes completos em [`docs/architecture/03-estrutura-projeto.md`](docs/architecture/03-estrutura-projeto.md).
+Detalhes completos em [`docs/architecture/03-estrutura-projeto.md`](../../docs/architecture/03-estrutura-projeto.md).
 
 ---
 
@@ -172,7 +172,7 @@ Estas convenções não são sugestões — código que as viola é considerado 
 - Métodos `find*` retornam entidade de domínio ou `null` — nunca `undefined`, nunca `boolean`
 - Métodos `save`/`delete` retornam `void` — nunca `boolean`
 
-**Invariantes financeiras (resumo — detalhe completo em [`docs/bussiness/04-carteiras-e-ledger-financeiro.md`](docs/bussiness/04-carteiras-e-ledger-financeiro.md)):**
+**Invariantes financeiras (resumo — detalhe completo em [`docs/bussiness/04-carteiras-e-ledger-financeiro.md`](../../docs/bussiness/04-carteiras-e-ledger-financeiro.md)):**
 - Saldos nunca ficam negativos (INV-001/002/003)
 - Toda movimentação de saldo cria um `ledger_entry` (INV-005)
 - Nenhum `ledger_entry` sem `transaction_id` (INV-006)
@@ -186,5 +186,5 @@ Estas convenções não são sugestões — código que as viola é considerado 
 - Não retornar `boolean` de repositório — lançar `DomainError` tipado
 - Não colocar SQL inline em repositórios de Clean Architecture
 - Não importar infraestrutura em `src/modules/*/domain/` — viola a Regra de Dependência
-- Não processar operação financeira sem verificar KYC (veja [`docs/bussiness/02-identidade-e-acesso.md`](docs/bussiness/02-identidade-e-acesso.md))
+- Não processar operação financeira sem verificar KYC (veja [`docs/bussiness/02-identidade-e-acesso.md`](../../docs/bussiness/02-identidade-e-acesso.md))
 - Não fazer múltiplos writes sem `UnitOfWork` — risco de estado parcial

@@ -24,7 +24,7 @@ API de uma plataforma de criptomoedas real. Funcionalidades: autenticação/KYC,
 
 ## Arquitetura
 
-Este projeto usa **Clean Architecture + DDD**. A documentação de referência está em `docs/architecture/`:
+Este projeto usa **Clean Architecture + DDD**. A documentação de referência está em `../../docs/architecture/`:
 
 - `01-analise-projeto-anterior.md` — análise de sistemas similares de matching: o que funcionou e o que evoluir
 - `02-clean-architecture-ddd-fundamentos.md` — princípios: Regra de Dependência, 4 camadas, DDD, UnitOfWork, erros tipados, bigint
@@ -58,7 +58,7 @@ src/
 └── app.module.ts
 ```
 
-Cada módulo é autocontido. O detalhe completo está em `docs/architecture/03-estrutura-projeto.md`.
+Cada módulo é autocontido. O detalhe completo está em `../../docs/architecture/03-estrutura-projeto.md`.
 
 ### Regra de Dependência
 
@@ -133,7 +133,7 @@ SQL fica em `src/modules/<contexto>/infrastructure/persistence/*.sql.ts` como co
 
 ## Documentação de negócio
 
-Em `docs/bussiness/` — estes são os documentos de referência tratados como "lei" do domínio:
+Em `../../docs/bussiness/` — estes são os documentos de referência tratados como "lei" do domínio:
 
 | Arquivo | Conteúdo |
 |---------|---------|
@@ -152,7 +152,7 @@ Em `docs/bussiness/` — estes são os documentos de referência tratados como "
 
 ## ADRs
 
-Em `docs/adr/` — decisões arquiteturais já tomadas (ADRs antigos em `docs/old-adrs/`):
+Em `../../docs/adr/` — decisões arquiteturais já tomadas (ADRs antigos em `../../docs/old-adrs/`):
 
 | ADR | Decisão |
 |-----|---------|
@@ -181,7 +181,7 @@ pnpm lint                     # linting
 
 ## Invariantes financeiros (resumo)
 
-Nunca implemente código que toque ledger sem ler `docs/bussiness/04-carteiras-e-ledger-financeiro.md`. As regras críticas:
+Nunca implemente código que toque ledger sem ler `../../docs/bussiness/04-carteiras-e-ledger-financeiro.md`. As regras críticas:
 
 - **INV-001/002/003** — Saldos nunca negativos
 - **INV-005** — Toda movimentação de saldo cria `ledger_entry`
@@ -198,5 +198,5 @@ Nunca implemente código que toque ledger sem ler `docs/bussiness/04-carteiras-e
 - **Não retorne `boolean` de repositório** — lance `DomainError` tipado
 - **Não coloque SQL inline em repositórios de CA** — use `*.queries.ts`
 - **Não importe infraestrutura em `src/modules/*/domain/`** — violação da Regra de Dependência
-- **Não processe operação financeira sem verificar KYC** — veja `docs/bussiness/02-identidade-e-acesso.md`
+- **Não processe operação financeira sem verificar KYC** — veja `../../docs/bussiness/02-identidade-e-acesso.md`
 - **Não faça múltiplos writes sem `UnitOfWork`** — risco de estado parcial

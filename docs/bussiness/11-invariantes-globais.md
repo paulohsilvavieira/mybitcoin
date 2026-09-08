@@ -6,9 +6,38 @@ As invariantes globais representam regras fundamentais que devem permanecer verd
 
 Toda funcionalidade, processo, serviço ou integração deve preservar essas propriedades.
 
+Este documento é o índice de **todas** as invariantes globais (financeiras e não financeiras), com ID `GLOB-NNN`. As invariantes puramente financeiras (GLOB-001, GLOB-003, GLOB-004, GLOB-020) têm versão mais detalhada, com exemplo de conta contábil, em `04-carteiras-e-ledger-financeiro.md` (IDs `INV-NNN`) — mesma regra, não duplicação divergente. Em caso de conflito de redação entre os dois documentos, `04-carteiras-e-ledger-financeiro.md` é a fonte de detalhe.
+
+## Índice
+
+`Aplicável hoje` indica se a funcionalidade a que a regra se refere já existe no código (✅), existe parcialmente (⚠️), ou depende de algo ainda não implementado — Order/Trade/Matching (❌ N/A hoje). A regra em si é válida desde já como design; a coluna só diz se há código para violá-la ou não hoje.
+
+| ID | Regra | Detalhe financeiro correspondente | Aplicável hoje |
+| --- | --- | --- | --- |
+| GLOB-001 | Nenhum saldo pode ser negativo | INV-001, INV-002, INV-003 | ✅ |
+| GLOB-002 | Nenhuma ordem pode ser executada mais de uma vez | — | ❌ N/A (Ordens/Trades não existem) |
+| GLOB-003 | Nenhum ativo pode ser criado espontaneamente | INV-008 | ✅ |
+| GLOB-004 | Nenhum ativo pode ser destruído espontaneamente | INV-009 | ⚠️ Parcial (saques/trades não implementados) |
+| GLOB-005 | Conservação global de ativos | INV-012 | ✅ |
+| GLOB-006 | Toda ordem deve possuir lastro financeiro | INV-010, INV-011 | ❌ N/A (Ordens não existem) |
+| GLOB-007 | Nenhum trade pode existir sem duas ordens compatíveis | — | ❌ N/A (Trades não existem) |
+| GLOB-008 | Toda execução deve atualizar os saldos correspondentes | — | ❌ N/A (Trades não existem) |
+| GLOB-009 | Nenhuma ordem cancelada pode voltar ao livro | — | ❌ N/A (Ordens não existem) |
+| GLOB-010 | Ordens totalmente executadas não podem receber novas execuções | — | ❌ N/A (Ordens não existem) |
+| GLOB-011 | Nenhum trade pode alterar o preço original registrado | — | ❌ N/A (Trades não existem) |
+| GLOB-012 | O histórico deve ser imutável | INV-014 | ✅ |
+| GLOB-013 | Todo evento deve ser auditável | — | ⚠️ Parcial (auditoria via ledger, não via event store — ver `10-eventos-de-dominio-e-auditoria.md`) |
+| GLOB-014 | O Matching Engine deve ser determinístico | — | ❌ N/A (Matching Engine não existe) |
+| GLOB-015 | Prioridade preço-tempo deve ser preservada | — | ❌ N/A (Matching Engine não existe) |
+| GLOB-016 | Nenhum usuário pode negociar consigo mesmo | — | ❌ N/A (Matching Engine não existe) |
+| GLOB-017 | Toda taxa deve possuir destino contábil | INV-013 | ❌ N/A (Trades não existem) |
+| GLOB-018 | Estados devem ser monotônicos | — | ✅ (ex.: status de User) |
+| GLOB-019 | Identificadores devem ser globalmente únicos | — | ✅ |
+| GLOB-020 | O razão contábil deve fechar (Σ débitos = Σ créditos) | INV-007 | ✅ |
+
 ---
 
-# 1. Nenhum Saldo Pode Ser Negativo
+# GLOB-001. Nenhum Saldo Pode Ser Negativo
 
 ## Regra
 
@@ -40,7 +69,7 @@ Saldos negativos indicam criação indevida de crédito, falhas de concorrência
 
 ---
 
-# 2. Nenhuma Ordem Pode Ser Executada Mais de Uma Vez
+# GLOB-002. Nenhuma Ordem Pode Ser Executada Mais de Uma Vez
 
 ## Regra
 
@@ -71,7 +100,7 @@ Trade #1001 executado novamente
 
 ---
 
-# 3. Nenhum Ativo Pode Ser Criado Espontaneamente
+# GLOB-003. Nenhum Ativo Pode Ser Criado Espontaneamente
 
 ## Regra
 
@@ -98,7 +127,7 @@ A Exchange não pode gerar BTC, ETH, USDT ou BRL sem evento legítimo.
 
 ---
 
-# 4. Nenhum Ativo Pode Ser Destruído Espontaneamente
+# GLOB-004. Nenhum Ativo Pode Ser Destruído Espontaneamente
 
 ## Regra
 
@@ -119,7 +148,7 @@ Toda redução de saldo deve possuir causa explícita.
 
 ---
 
-# 5. Conservação Global de Ativos
+# GLOB-005. Conservação Global de Ativos
 
 ## Regra
 
@@ -160,7 +189,7 @@ O trade apenas redistribui propriedade.
 
 ---
 
-# 6. Toda Ordem Deve Possuir Lastro Financeiro
+# GLOB-006. Toda Ordem Deve Possuir Lastro Financeiro
 
 ## Regra
 
@@ -188,7 +217,7 @@ Impede:
 
 ---
 
-# 7. Nenhum Trade Pode Existir Sem Duas Ordens Compatíveis
+# GLOB-007. Nenhum Trade Pode Existir Sem Duas Ordens Compatíveis
 
 ## Regra
 
@@ -209,7 +238,7 @@ Trades não podem ser criados manualmente pelo sistema.
 
 ---
 
-# 8. Toda Execução Deve Atualizar os Saldos Correspondentes
+# GLOB-008. Toda Execução Deve Atualizar os Saldos Correspondentes
 
 ## Regra
 
@@ -235,7 +264,7 @@ Resultado obrigatório:
 
 ---
 
-# 9. Nenhuma Ordem Cancelada Pode Voltar ao Livro
+# GLOB-009. Nenhuma Ordem Cancelada Pode Voltar ao Livro
 
 ## Regra
 
@@ -258,7 +287,7 @@ CANCELLED → OPEN
 
 ---
 
-# 10. Ordens Totalmente Executadas Não Podem Receber Novas Execuções
+# GLOB-010. Ordens Totalmente Executadas Não Podem Receber Novas Execuções
 
 ## Regra
 
@@ -279,7 +308,7 @@ FILLED → FILLED novamente
 
 ---
 
-# 11. Nenhum Trade Pode Alterar o Preço Original Registrado
+# GLOB-011. Nenhum Trade Pode Alterar o Preço Original Registrado
 
 ## Regra
 
@@ -295,7 +324,7 @@ Preserva:
 
 ---
 
-# 12. O Histórico Deve Ser Imutável
+# GLOB-012. O Histórico Deve Ser Imutável
 
 ## Regra
 
@@ -329,7 +358,7 @@ INSERT correction_event
 
 ---
 
-# 13. Todo Evento Deve Ser Auditável
+# GLOB-013. Todo Evento Deve Ser Auditável
 
 ## Regra
 
@@ -347,7 +376,7 @@ Toda alteração relevante deve possuir rastreabilidade.
 
 ---
 
-# 14. O Matching Engine Deve Ser Determinístico
+# GLOB-014. O Matching Engine Deve Ser Determinístico
 
 ## Regra
 
@@ -363,7 +392,7 @@ Permite:
 
 ---
 
-# 15. Prioridade Preço-Tempo Deve Ser Preservada
+# GLOB-015. Prioridade Preço-Tempo Deve Ser Preservada
 
 ## Regra
 
@@ -389,7 +418,7 @@ A antes de B
 
 ---
 
-# 16. Nenhum Usuário Pode Negociar Consigo Mesmo
+# GLOB-016. Nenhum Usuário Pode Negociar Consigo Mesmo
 
 ## Regra
 
@@ -405,7 +434,7 @@ Evita:
 
 ---
 
-# 17. Toda Taxa Deve Possuir Destino Contábil
+# GLOB-017. Toda Taxa Deve Possuir Destino Contábil
 
 ## Regra
 
@@ -426,7 +455,7 @@ Taxa desaparece do sistema
 
 ---
 
-# 18. Estados Devem Ser Monotônicos
+# GLOB-018. Estados Devem Ser Monotônicos
 
 ## Regra
 
@@ -450,7 +479,7 @@ FILLED → OPEN
 
 ---
 
-# 19. Identificadores Devem Ser Globalmente Únicos
+# GLOB-019. Identificadores Devem Ser Globalmente Únicos
 
 ## Regra
 
@@ -467,7 +496,7 @@ Não podem existir dois registros com o mesmo identificador lógico.
 
 ---
 
-# 20. O Razão Contábil Deve Fechar
+# GLOB-020. O Razão Contábil Deve Fechar
 
 ## Regra
 

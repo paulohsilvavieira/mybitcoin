@@ -1,5 +1,29 @@
 # Estrutura do Projeto: mybitcoin-api
 
+## Índice
+
+* [Status de Implementação](#status-de-implementação)
+* [Objetivo](#objetivo)
+* [Princípios](#princípios)
+* [Estrutura Geral](#estrutura-geral)
+* [Estrutura de um módulo](#estrutura-de-um-módulo)
+* [Domain](#domain)
+* [Application](#application)
+* [Infrastructure](#infrastructure)
+* [Presentation](#presentation)
+* [Infrastructure Global](#infrastructure-global)
+* [Unit Of Work](#unit-of-work)
+* [DatabaseModule](#databasemodule)
+* [Exemplo completo](#exemplo-completo)
+* [Fluxo de uma requisição](#fluxo-de-uma-requisição)
+* [Organização da Persistência](#organização-da-persistência)
+* [Diagrama de Dependências](#diagrama-de-dependências)
+* [Benefícios dessa organização](#benefícios-dessa-organização)
+
+## Status de Implementação
+
+`orders/` é usado abaixo como **exemplo didático** da convenção de módulo — não é um módulo que existe hoje. Os módulos reais em `src/modules/` são `identity/` e `financial/`; a lista de módulos na seção "Estrutura Geral" mostra o desenho de expansão planejado, não o estado atual. Todo bloco de código abaixo com `orders/` (Domain, Application, Infrastructure, Presentation, Exemplo completo) é ilustrativo — nenhum desses arquivos existe.
+
 ## Objetivo
 
 Definir uma estrutura de projeto que combine:
@@ -51,23 +75,21 @@ src/
 │   │
 │   └── config/
 │
-├── modules/
+├── modules/                     ← implementados hoje: identity/, financial/
 │
-│   ├── account/
+│   ├── identity/                ← ✅ implementado (cadastro, login, sessão)
 │   │
-│   ├── wallets/
+│   ├── financial/               ← ✅ implementado (transaction, ledger-entry, confirmação de depósito)
 │   │
-│   ├── ledger/
+│   ├── wallets/                 ← ❌ planejado (saldo hoje é derivado, ver docs/bussiness/03-modelo-de-dominio.md)
 │   │
-│   ├── orders/
+│   ├── orders/                  ← ❌ planejado
 │   │
-│   ├── trades/
+│   ├── trades/                  ← ❌ planejado
 │   │
-│   ├── matching/
+│   ├── matching/                ← ❌ planejado
 │   │
-│   ├── bitcoin/
-│   │
-│   └── financial/
+│   └── bitcoin/                 ← ❌ planejado (depósito/saque on-chain)
 │
 ├── shared/
 │   ├── domain.error.ts
@@ -78,9 +100,9 @@ src/
 
 ---
 
-# Estrutura de um módulo
+# Estrutura de um módulo (exemplo didático)
 
-Cada módulo segue exatamente a mesma organização.
+Cada módulo segue exatamente a mesma organização. O exemplo usa `orders/` — módulo que ainda não existe, ver [Status de Implementação](#status-de-implementação).
 
 Exemplo:
 
@@ -102,7 +124,7 @@ Cada módulo é completamente independente dos demais.
 
 ---
 
-# Domain
+# Domain (exemplo didático com `orders/`)
 
 Contém apenas regras de negócio.
 
@@ -150,7 +172,7 @@ export abstract class OrderRepository {
 
 ---
 
-# Application
+# Application (exemplo didático com `orders/`)
 
 Contém os casos de uso.
 
@@ -189,7 +211,7 @@ Repository Interface
 
 ---
 
-# Infrastructure
+# Infrastructure (exemplo didático com `orders/`)
 
 Implementa tudo que é detalhe técnico.
 
@@ -277,7 +299,7 @@ Isso facilita:
 
 ---
 
-# Presentation
+# Presentation (exemplo didático com `orders/`)
 
 Responsável apenas pela comunicação externa.
 
@@ -438,7 +460,7 @@ Esses pertencem aos módulos.
 
 ---
 
-# Exemplo completo
+# Exemplo completo (exemplo didático com `orders/`)
 
 ```text
 modules
@@ -541,12 +563,14 @@ Commit / Rollback
 
 A responsabilidade da persistência fica distribuída por domínio.
 
-| Domínio | Repository            | SQL              |
-| ------- | --------------------- | ---------------- |
-| Orders  | `PgOrderRepository`   | `order.sql.ts`   |
-| Wallets | `PgWalletRepository`  | `wallet.sql.ts`  |
-| Ledger  | `PgLedgerRepository`  | `ledger.sql.ts`  |
-| Bitcoin | `PgBitcoinRepository` | `bitcoin.sql.ts` |
+| Domínio                 | Repository                     | SQL                       | Status |
+| ------------------------ | -------------------------------- | --------------------------- | ------ |
+| Identity                 | `UserRepository`                 | (ver `identity/infrastructure/persistence/`) | ✅ implementado |
+| Financial (transaction)  | `PgTransactionRepository`        | `transaction.sql.ts`        | ✅ implementado |
+| Financial (ledger entry) | `PgLedgerEntryRepository`        | `ledger-entry.sql.ts`       | ✅ implementado |
+| Orders                    | `PgOrderRepository` (exemplo)    | `order.sql.ts` (exemplo)    | ❌ planejado |
+| Wallets                   | `PgWalletRepository` (exemplo)   | `wallet.sql.ts` (exemplo)   | ❌ planejado |
+| Bitcoin                   | `PgBitcoinRepository` (exemplo)  | `bitcoin.sql.ts` (exemplo)  | ❌ planejado |
 
 Não existe uma pasta global contendo todas as queries ou todos os repositórios.
 

@@ -1,8 +1,26 @@
 # Eventos de Domínio, Event Sourcing e Auditoria
 
+## Índice
+
+* [Status de Implementação](#status-de-implementação)
+* [1. Visão Geral](#1-visão-geral)
+* [2. Eventos de Domínio](#2-eventos-de-domínio)
+* [3. Eventos Principais](#3-eventos-principais)
+* [4. Event Sourcing 🔮 alvo futuro](#4-event-sourcing-)
+* [5. Event Store 🔮 alvo futuro](#5-event-store-)
+* [6. Replay 🔮 alvo futuro](#6-replay-)
+* [7. Reconstrução de Estado 🔮 alvo futuro](#7-reconstrução-de-estado-)
+* [8. Auditoria](#8-auditoria)
+
+## Status de Implementação
+
+**Este documento descreve arquitetura-alvo, não implementada.** Hoje não existe Event Store nem Event Sourcing no código — a auditoria financeira real é feita via `financial/domain/entities/ledger-entry.entity.ts` (imutável, mas é uma tabela relacional simples, não um event store com replay/projeções). Um arquivo antigo de tentativa de Event Sourcing é código morto (ver nota em `docs/architecture/03-estrutura-projeto.md`, seção Unit Of Work). Os eventos de domínio de `identity/domain/events/` existem e são reais, mas não alimentam nenhum Event Store — são notificações pontuais, não a fonte da verdade do estado.
+
+Trate as seções 4-7 abaixo (Event Sourcing, Event Store, Replay, Reconstrução de Estado) como desenho de uma evolução futura possível, não como o mecanismo em produção hoje.
+
 ## 1. Visão Geral
 
-A Exchange adota uma arquitetura orientada a eventos (Event-Driven Architecture) utilizando Event Sourcing como mecanismo principal de persistência de mudanças de estado.
+A Exchange adota uma arquitetura orientada a eventos (Event-Driven Architecture) utilizando Event Sourcing como mecanismo principal de persistência de mudanças de estado — **desenho-alvo, ver nota de status acima.**
 
 Nesse modelo:
 
@@ -287,7 +305,9 @@ Todos os eventos seguem um envelope padrão.
 
 ---
 
-# 4. Event Sourcing
+# 4. Event Sourcing 🔮
+
+> 🔮 **Alvo futuro, não implementado.** Ver [Status de Implementação](#status-de-implementação).
 
 ## Conceito
 
@@ -334,7 +354,9 @@ O estado atual pode ser reconstruído a qualquer momento.
 
 ---
 
-# 5. Event Store
+# 5. Event Store 🔮
+
+> 🔮 **Alvo futuro, não implementado.** Ver [Status de Implementação](#status-de-implementação).
 
 ## Conceito
 
@@ -441,7 +463,9 @@ Trade aplicado apenas uma vez
 
 ---
 
-# 6. Replay
+# 6. Replay 🔮
+
+> 🔮 **Alvo futuro, não implementado.** Ver [Status de Implementação](#status-de-implementação).
 
 ## Conceito
 
@@ -517,7 +541,9 @@ Estado Atual
 
 ---
 
-# 7. Reconstrução de Estado
+# 7. Reconstrução de Estado 🔮
+
+> 🔮 **Alvo futuro, não implementado.** Ver [Status de Implementação](#status-de-implementação).
 
 ## Fonte da Verdade
 
@@ -581,7 +607,9 @@ Read Model
 
 ---
 
-# 8. Auditoria
+# 8. Auditoria ⚠️
+
+> ⚠️ **Parcial.** A auditoria financeira real hoje é feita via `LedgerEntry` (imutável, tabela relacional), não via Event Store — a "Trilha de Auditoria" abaixo (baseada em eventos correlacionados) é o desenho-alvo. Ver [Status de Implementação](#status-de-implementação).
 
 ## Objetivo
 

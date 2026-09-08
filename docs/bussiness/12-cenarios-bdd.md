@@ -1,6 +1,20 @@
-# Cenários BDD - Exchange Spot Educacional
+# Cenários BDD - mybitcoin
 
-## Usuários
+> Nota: versões anteriores deste documento chamavam o produto de "Exchange Spot Educacional". Conforme CLAUDE.md, este é o projeto de uma plataforma de criptomoedas real, não um simulador educacional — o título foi corrigido para refletir isso.
+
+## Status de Implementação
+
+| Seção          | Status                                                                 |
+| -------------- | ------------------------------------------------------------------------ |
+| Usuários       | ✅ Cadastro/login implementados (módulo `identity`) — Cenário 08 (bloqueio) ainda não, `BLOCKED` não existe no status real hoje |
+| Wallets        | ⚠️ Parcial — saldo hoje é derivado do ledger, sem endpoint de consulta dedicado |
+| Depósitos      | ⚠️ Parcial — fluxo de confirmação existe no módulo `financial`         |
+| Saques         | ❌ Planejado — não implementado                                          |
+| Ordens         | ❌ Planejado — módulo de ordens não existe                               |
+| Matching Engine | ❌ Planejado — não existe                                                |
+| Trades         | ❌ Planejado — não existe                                                |
+
+## Usuários ✅
 
 ### Cenário 01 - Cadastro de usuário com sucesso
 
@@ -58,7 +72,7 @@
 
 ---
 
-### Cenário 08 - Bloqueio de usuário
+### Cenário 08 - Bloqueio de usuário ❌ (status `BLOCKED` não existe hoje)
 
 **Dado** que um usuário foi bloqueado pela administração
 **Quando** tentar realizar login
@@ -66,7 +80,7 @@
 
 ---
 
-## Wallets
+## Wallets ⚠️ Parcial
 
 ### Cenário 09 - Criação automática de wallet
 
@@ -124,7 +138,7 @@
 
 ---
 
-## Depósitos
+## Depósitos ⚠️ Parcial
 
 ### Cenário 16 - Depósito em BRL
 
@@ -174,7 +188,7 @@
 
 ---
 
-## Saques
+## Saques ❌ Planejado
 
 ### Cenário 22 - Saque de BRL com saldo suficiente
 
@@ -232,7 +246,7 @@
 
 ---
 
-## Ordens
+## Ordens ❌ Planejado
 
 ### Cenário 29 - Criação de ordem de compra limitada
 
@@ -314,7 +328,7 @@
 
 ---
 
-## Matching Engine
+## Matching Engine ❌ Planejado
 
 ### Cenário 39 - Match completo
 
@@ -381,7 +395,7 @@
 
 ---
 
-## Trades
+## Trades ❌ Planejado
 
 ### Cenário 47 - Geração de trade
 

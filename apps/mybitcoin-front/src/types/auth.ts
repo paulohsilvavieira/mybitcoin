@@ -3,6 +3,9 @@ export type UserStatus =
   | 'ACTIVE'
   | 'SUSPENDED'
 
+/** Status de verificação KYC — ainda sem endpoint dedicado na API (mock de UI). */
+export type KycStatus = 'VERIFIED' | 'PENDING' | 'REJECTED' | 'NOT_STARTED'
+
 /** Formato normalizado do usuário autenticado, usado no cache do TanStack Query (DATA-001). */
 export interface AuthUser {
   id: string

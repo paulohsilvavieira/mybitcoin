@@ -12,7 +12,7 @@ import type { OrderBookData } from '@/types/order-book'
 
 // Mesmo exemplo numérico do "Estado Simplificado do Order Book" em
 // docs/bussiness/06-order-book.md — não inventei valores novos.
-const MOCK_ORDER_BOOK: OrderBookData = {
+export const MOCK_ORDER_BOOK: OrderBookData = {
   pair: 'BTC/BRL',
   asks: [
     { price: '500.300', quantity: '0.20' },
@@ -26,7 +26,7 @@ const MOCK_ORDER_BOOK: OrderBookData = {
   ],
 }
 
-const MOCK_MARKET_STATS: MarketStats = {
+export const MOCK_MARKET_STATS: MarketStats = {
   pair: 'BTC/BRL',
   lastPrice: '500.20',
   changePercent24h: 1.06,
@@ -43,7 +43,7 @@ function daysAgo(n: number): string {
 
 // Série diária determinística (sem Math.random) na mesma faixa de preço do
 // order book mockado (495–505), pra ficar coerente com o resto da tela.
-const MOCK_CANDLES: Candle[] = [
+export const MOCK_CANDLES: Candle[] = [
   { open: 495.0, high: 497.2, low: 494.5, close: 496.8 },
   { open: 496.8, high: 498.0, low: 496.0, close: 497.5 },
   { open: 497.5, high: 499.1, low: 496.9, close: 498.7 },
@@ -66,7 +66,7 @@ const MOCK_CANDLES: Candle[] = [
   { open: 500.5, high: 501.0, low: 499.6, close: 500.2 },
 ].map((candle, index) => ({ ...candle, time: daysAgo(19 - index) }))
 
-const MOCK_OPEN_ORDERS: OpenOrder[] = [
+export const MOCK_OPEN_ORDERS: OpenOrder[] = [
   {
     id: '1',
     side: 'BUY',
@@ -89,7 +89,7 @@ const MOCK_OPEN_ORDERS: OpenOrder[] = [
   },
 ]
 
-const MOCK_TRADES: Trade[] = [
+export const MOCK_TRADES: Trade[] = [
   { id: 't1', price: '500.300', quantity: '0.05000000', takerSide: 'BUY', executedAt: new Date().toISOString() },
   { id: 't2', price: '500.200', quantity: '0.12000000', takerSide: 'SELL', executedAt: new Date(Date.now() - 60_000).toISOString() },
   { id: 't3', price: '500.300', quantity: '0.02000000', takerSide: 'BUY', executedAt: new Date(Date.now() - 120_000).toISOString() },

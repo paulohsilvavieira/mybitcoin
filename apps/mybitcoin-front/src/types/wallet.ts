@@ -11,3 +11,22 @@ export interface Balance {
   locked: string
   total: string
 }
+
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL'
+
+export type TransactionStatus = 'PENDING' | 'CONFIRMED' | 'FAILED'
+
+/**
+ * Depósito/saque on-chain — ainda sem endpoint na API (mock de UI).
+ * `amountSatoshi` segue FIN-001/FIN-002 como `Balance`: string, nunca
+ * `Number()`, exibição só via `formatSatoshi()`.
+ */
+export interface Transaction {
+  id: string
+  type: TransactionType
+  asset: string
+  amountSatoshi: string
+  status: TransactionStatus
+  txHash: string
+  createdAt: string
+}

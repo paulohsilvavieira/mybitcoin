@@ -5,7 +5,7 @@ import type { Balance } from '@/types/wallet'
 // `formatSatoshi()` (FIN-002) só sabe formatar BTC — igual à API real hoje,
 // que só suporta esse ativo (ver CLAUDE.md). Nada de mockar ETH/USDT aqui:
 // mostraria "BTC" grudado num valor que não é BTC.
-const MOCK_BALANCES: Balance[] = [
+export const MOCK_BALANCES: Balance[] = [
   { asset: 'BTC', available: '15000000', locked: '2500000', total: '17500000' },
 ]
 

@@ -136,7 +136,7 @@ O front (`mybitcoin-front`) já resolve login com o fluxo descrito nas seções 
 - A API (`apps/mybitcoin-api/src/modules/identity/presentation/sessions.controller.ts`, `session-cookies.ts`) só suporta sessão via cookie — não existe endpoint de token. Não é opção trocar a estratégia de sessão unilateralmente no mobile.
 - React Native não tem `document.cookie` nem gerencia cookies automaticamente como um browser.
 - Expo Router é file-based e, à época, não tinha nenhuma estrutura de grupos/stack — só as tabs renderizadas direto no layout raiz.
-- RNR (React Native Reusables) não tem um componente `Field`/`FieldError` equivalente ao shadcn.
+- RNR (React Native Reusables) não tem um componente `Field`/`FieldError` equivalente ao usado no front (componente próprio de formulário em Tailwind puro).
 - Regras de negócio de login já implementadas na API (`docs/bussiness/02-identidade-e-acesso.md`, LOG-001 a LOG-006): apenas contas ativas autenticam, mensagem de erro não revela qual campo está errado (LOG-003), bloqueio temporário após excesso de falhas (LOG-006) — tudo isso já é tratado no `authService`/`handleApiError` do front e deve ser replicado tal como está, não redecidido aqui.
 
 ### Decisão (Mobile)

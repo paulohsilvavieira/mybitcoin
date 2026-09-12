@@ -15,7 +15,7 @@ Frontend SPA da plataforma de criptomoedas mybitcoin. Consome a API em `/home/pa
 | Framework | React 19 (SPA) |
 | Build | Vite 8 |
 | Linguagem | TypeScript 6 |
-| Estilos | TailwindCSS v4 + shadcn/ui (Vega style) |
+| Estilos | TailwindCSS v4 (utilitário puro, sem biblioteca de componentes) |
 | Estado global | Zustand |
 | Fetching | TanStack Query v5 + Axios |
 | Roteamento | React Router v7 |
@@ -35,7 +35,7 @@ SPA simples — **sem Clean Architecture**. A regra: manutenção boa, sem over-
 ```
 src/
 ├── components/
-│   ├── ui/              ← componentes shadcn (gerados, não editar manualmente)
+│   ├── ui/              ← primitivos de UI em Tailwind puro (button, card, input, etc.) — podem ser editados diretamente
 │   └── <domínio>/       ← componentes de negócio (ex: wallet/, order-book/)
 ├── pages/               ← uma pasta por rota/tela
 ├── hooks/               ← custom hooks reutilizáveis
@@ -121,7 +121,7 @@ const amount = Number(balance) // perde precisão acima de 2^53
 - Mobile-first obrigatório — design para < 768px, enriqueça com `md:` e `lg:`
 - Acessibilidade não é opcional: botões com `aria-label`, inputs com `<Label>`, foco visível
 - Semântica HTML: `<button>` para ações, `<a>` para navegação, `<h1>`–`<h6>` em ordem
-- Use `shadcn/ui` antes de criar componente customizado — veja `/shadcn-component-discovery`
+- Antes de criar um novo primitivo, verifique se já existe algo reutilizável em `src/components/ui/`
 
 ### Anti-god component (UI-004)
 
@@ -147,28 +147,24 @@ src/components/wallet/
 - Componente que faz fetch + render + form + validação
 - Componente com mais de 3 responsabilidades
 
-### shadcn/ui
+### Primitivos de UI (Tailwind puro)
 
 - Tokens semânticos: `text-foreground`, `bg-muted`, `border-border` — nunca `text-gray-500`
 - `gap-*` em flex/grid, nunca `space-y-*` ou `margin` em filhos
 - `size-*` quando width = height (`size-10` não `w-10 h-10`)
 - `cn()` de `@/lib/utils` para compor classes
+- Os primitivos (`button`, `card`, `input`, etc.) vivem em `src/components/ui/` como componentes próprios em Tailwind puro — sem Radix, sem CVA, sem CLI de geração. Podem e devem ser editados diretamente quando necessário.
+- Para variantes de componente (ex: `variant="primary" | "danger"`), use uma função TS simples ou um objeto de mapeamento de classes — não introduza CVA:
 
-### Instalação shadcn
+```typescript
+const buttonVariants = {
+  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+} as const
 
-```bash
-# 1. Sempre buscar antes de criar
-pnpm dlx shadcn@latest search "<necessidade>"
-
-# 2. Instalar via CLI (NUNCA copiar código)
-pnpm dlx shadcn@latest add <componente>
-
-# 3. Componentes instalados ficam em src/components/ui/
-#    NUNCA editar manualmente — estender via composição
-
-# 4. Se precisa de variante, usar CVA:
-import { cva, type VariantProps } from "class-variance-authority"
-const badgeVariants = cva("...", { variants: { ... } })
+function Button({ variant = 'primary', className, ...props }: ButtonProps) {
+  return <button className={cn(buttonVariants[variant], className)} {...props} />
+}
 ```
 
 ### Formulários (react-hook-form + zod)
@@ -185,16 +181,28 @@ const depositSchema = z.object({
   address: z.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/, 'Endereço Bitcoin inválido'),
 })
 
-// Componente usa react-hook-form + shadcn Form
+// Componente usa react-hook-form + componentes de formulário próprios (Tailwind puro)
 function DepositForm() {
   const form = useForm<DepositFormData>({ resolver: zodResolver(depositSchema) })
-  // Usar <FormField>, <FormItem>, <FormLabel>, <FormControl>, <FormMessage>
+  const { register, formState: { errors } } = form
+
+  // Usar <Field>, <Label>, <Input> customizados do projeto,
+  // com a mensagem de erro renderizada manualmente a partir de formState.errors
+  return (
+    <Field>
+      <Label htmlFor="amount_satoshi">Valor</Label>
+      <Input id="amount_satoshi" {...register('amount_satoshi')} />
+      {errors.amount_satoshi && (
+        <p className="text-sm text-destructive">{errors.amount_satoshi.message}</p>
+      )}
+    </Field>
+  )
 }
 ```
 
 **Regras:**
 - Schema zod = validação + tipos (single source of truth)
-- Componentes usam `<FormField>`, `<FormItem>`, `<FormLabel>`, `<FormControl>`, `<FormMessage>` do shadcn
+- Componentes usam `<Field>`, `<Label>`, `<Input>` (e demais primitivos próprios em `src/components/ui/`) — mensagens de erro são renderizadas manualmente a partir de `form.formState.errors`, sem componentes de formulário de biblioteca externa
 - Erros da API são setados via `form.setError('root', { message: '...' })`
 - Nunca validação manual com `if/else` no componente
 
@@ -203,7 +211,7 @@ function DepositForm() {
 - **Error Boundary** em `src/components/error-boundary.tsx` — encapsula páginas
 - **ApiError** em `src/lib/api-errors.ts` — mapeamento centralizado de erros da API
 - **handleApiError()** — converte qualquer erro para mensagem em pt-BR
-- Toast de erros via sonner ou shadcn toast
+- Toast de erros via componente Toast próprio em Tailwind puro
 
 ### Code Splitting / Lazy Loading
 
@@ -238,7 +246,6 @@ pnpm lint                   # linting
 pnpm test                   # testes (vitest run)
 pnpm test:watch             # testes em watch mode
 pnpm test:coverage          # testes com cobertura
-pnpm dlx shadcn@latest add  # adicionar componente shadcn
 ```
 
 ---
@@ -250,7 +257,8 @@ A API base fica em `VITE_API_URL` (`.env`). Todos os valores monetários chegam 
 ## O que NÃO fazer
 
 - **Não use `number` para valores financeiros** — use `string` (input) ou `BigInt` (cálculo)
-- **Não edite arquivos em `src/components/ui/`** — são gerados pelo shadcn CLI; adicione variantes por composição
+- **PODE editar arquivos em `src/components/ui/`** — são componentes próprios do projeto em Tailwind puro, não gerados por CLI
+- **Não instale ou reintroduza shadcn/ui, Radix ou CVA** — os primitivos de UI são Tailwind puro, mantidos manualmente em `src/components/ui/`
 - **Não use cores hardcoded do Tailwind** (`text-gray-500`) — use tokens semânticos (`text-muted-foreground`)
 - **Não coloque lógica de negócio em componentes** — mova para hooks ou stores
 - **Não crie estado Zustand para estado local** — `useState` para coisas que só uma tela precisa

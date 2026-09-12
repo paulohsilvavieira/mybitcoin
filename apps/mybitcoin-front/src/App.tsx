@@ -28,6 +28,107 @@ const TradingPreviewPage = import.meta.env.DEV
       })),
     )
   : null
+const MarketPreviewPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/market-preview-page').then((module) => ({
+        default: module.MarketPreviewPage,
+      })),
+    )
+  : null
+const ComponentGalleryPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/component-gallery-page').then((module) => ({
+        default: module.ComponentGalleryPage,
+      })),
+    )
+  : null
+
+// Backoffice administrativo — camada visual mocada, sem API/auth real.
+// Só existe em `pnpm dev` (import.meta.env.DEV), mesmo padrão das rotas acima.
+const AdminLayout = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/components/backoffice/admin-layout').then((module) => ({
+        default: module.AdminLayout,
+      })),
+    )
+  : null
+const DashboardPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/dashboard-page').then((module) => ({
+        default: module.DashboardPage,
+      })),
+    )
+  : null
+const UsersPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/users-page').then((module) => ({
+        default: module.UsersPage,
+      })),
+    )
+  : null
+const UserDetailPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/user-detail-page').then((module) => ({
+        default: module.UserDetailPage,
+      })),
+    )
+  : null
+const WalletsPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/wallets-page').then((module) => ({
+        default: module.WalletsPage,
+      })),
+    )
+  : null
+const TransfersPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/transfers-page').then((module) => ({
+        default: module.TransfersPage,
+      })),
+    )
+  : null
+const AuditPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/audit-page').then((module) => ({
+        default: module.AuditPage,
+      })),
+    )
+  : null
+const WithdrawalsPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/withdrawals-page').then((module) => ({
+        default: module.WithdrawalsPage,
+      })),
+    )
+  : null
+const FeesPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/fees-page').then((module) => ({
+        default: module.FeesPage,
+      })),
+    )
+  : null
+const AdminSettingsPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/admin-settings-page').then((module) => ({
+        default: module.AdminSettingsPage,
+      })),
+    )
+  : null
+const MarketsPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/markets-page').then((module) => ({
+        default: module.MarketsPage,
+      })),
+    )
+  : null
+const AdminsPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/pages/backoffice/admins-page').then((module) => ({
+        default: module.AdminsPage,
+      })),
+    )
+  : null
 
 const queryClient = new QueryClient()
 
@@ -68,6 +169,45 @@ const router = createBrowserRouter([
         : []),
       ...(TradingPreviewPage
         ? [{ path: '/preview/trading', element: <TradingPreviewPage /> }]
+        : []),
+      ...(MarketPreviewPage
+        ? [{ path: '/preview/market', element: <MarketPreviewPage /> }]
+        : []),
+      ...(ComponentGalleryPage
+        ? [{ path: '/preview/gallery', element: <ComponentGalleryPage /> }]
+        : []),
+      // Backoffice administrativo — layout pai + rotas filhas.
+      ...(AdminLayout &&
+      DashboardPage &&
+      UsersPage &&
+      UserDetailPage &&
+      WalletsPage &&
+      TransfersPage &&
+      AuditPage &&
+      WithdrawalsPage &&
+      FeesPage &&
+      AdminSettingsPage &&
+      MarketsPage &&
+      AdminsPage
+        ? [
+            {
+              path: '/preview/backoffice',
+              element: <AdminLayout />,
+              children: [
+                { index: true, element: <DashboardPage /> },
+                { path: 'users', element: <UsersPage /> },
+                { path: 'users/:id', element: <UserDetailPage /> },
+                { path: 'wallets', element: <WalletsPage /> },
+                { path: 'transfers', element: <TransfersPage /> },
+                { path: 'withdrawals', element: <WithdrawalsPage /> },
+                { path: 'markets', element: <MarketsPage /> },
+                { path: 'fees', element: <FeesPage /> },
+                { path: 'settings', element: <AdminSettingsPage /> },
+                { path: 'admins', element: <AdminsPage /> },
+                { path: 'audit', element: <AuditPage /> },
+              ],
+            },
+          ]
         : []),
     ],
   },

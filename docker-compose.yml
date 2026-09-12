@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: .
+      context: ./apps/mybitcoin-api
       dockerfile: Dockerfile.dev
     command: pnpm start:dev
     ports:
@@ -19,7 +19,7 @@ services:
       DB_PASSWORD: postgres
       DB_POOL_SIZE: 10
     volumes:
-      - .:/app
+      - ./apps/mybitcoin-api:/app
       - /app/node_modules
     depends_on:
       postgres-replica:
@@ -42,7 +42,7 @@ services:
       REPLICATION_PASSWORD: replicator_password
     volumes:
       - postgres_primary_data:/var/lib/postgresql/data
-      - ./docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
+      - ./apps/mybitcoin-api/docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
     ports:
       - "5434:5432"
     healthcheck:
@@ -60,7 +60,7 @@ services:
       POSTGRES_PRIMARY_HOST: postgres-primary
     volumes:
       - postgres_replica_data:/var/lib/postgresql/data
-      - ./docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
+      - ./apps/mybitcoin-api/docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
     entrypoint: ["/entrypoint-replica.sh"]
     depends_on:
       postgres-primary:
@@ -90,7 +90,7 @@ services:
       REPLICATION_PASSWORD: replicator_password
     volumes:
       - postgres_test_primary_data:/var/lib/postgresql/data
-      - ./docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
+      - ./apps/mybitcoin-api/docker/postgres-primary/init-replication.sh:/docker-entrypoint-initdb.d/init-replication.sh:ro
     ports:
       - "5444:5432"
     healthcheck:
@@ -108,7 +108,7 @@ services:
       POSTGRES_PRIMARY_HOST: test-postgres-primary
     volumes:
       - postgres_test_replica_data:/var/lib/postgresql/data
-      - ./docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
+      - ./apps/mybitcoin-api/docker/postgres-replica/entrypoint-replica.sh:/entrypoint-replica.sh:ro
     entrypoint: ["/entrypoint-replica.sh"]
     depends_on:
       test-postgres-primary:

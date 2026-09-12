@@ -51,6 +51,7 @@ function RootNavigator() {
           nunca linkar a partir de UI real. */}
       <Stack.Screen name='preview-wallet' />
       <Stack.Screen name='preview-trading' />
+      <Stack.Screen name='preview-market' />
     </Stack>
   );
 }

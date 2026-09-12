@@ -12,3 +12,23 @@ export interface Balance {
   locked: string;
   total: string;
 }
+
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL';
+
+export type TransactionStatus = 'CONFIRMED' | 'PENDING' | 'FAILED';
+
+/**
+ * Movimento de depósito/saque on-chain, conforme
+ * `docs/bussiness/04-carteiras-e-ledger-financeiro.md`. Mesmos nomes de
+ * campo de `types/wallet.ts` do `../mybitcoin-front`. `amountSatoshi` chega
+ * como satoshi serializado (bigint na API) — exibição via `formatSatoshi()`
+ * (FIN-002), nunca `Number()` (FIN-001).
+ */
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amountSatoshi: string;
+  status: TransactionStatus;
+  txHash: string;
+  createdAt: string;
+}

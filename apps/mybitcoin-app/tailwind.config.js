@@ -51,9 +51,17 @@ module.exports = {
         },
       },
       borderRadius: {
+        // Mesma nomenclatura/escala de `../mybitcoin-front/src/index.css`
+        // (`@theme inline`), como múltiplos de `--radius` em vez de
+        // subtrações fixas — mantém `rounded-*` reaproveitável 1:1 entre
+        // front e mobile.
+        sm: 'calc(var(--radius) * 0.6)',
+        md: 'calc(var(--radius) * 0.8)',
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(var(--radius) * 1.5)',
+        '2xl': 'calc(var(--radius) * 1.8)',
+        '3xl': 'calc(var(--radius) * 2.2)',
+        '4xl': 'calc(var(--radius) * 2.6)',
       },
       fontFamily: {
         sans: ['Geist_400Regular'],

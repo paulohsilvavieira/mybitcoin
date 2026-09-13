@@ -41,7 +41,7 @@ function parseSetCookie(header: string[] | undefined): ParsedCookies {
 }
 
 describe('IdentityController — autenticação (integração)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let server: App;
   let writePool: Pool;
   let readPool: Pool;
@@ -57,7 +57,7 @@ describe('IdentityController — autenticação (integração)', () => {
       ],
     }).compile();
 
-    app = moduleRef.createNestApplication<App>();
+    app = moduleRef.createNestApplication();
     app.use(cookieParser());
     app.useGlobalFilters(new DomainErrorFilter());
     await app.init();
@@ -140,6 +140,91 @@ describe('IdentityController — autenticação (integração)', () => {
   function cookieHeader(cookies: ParsedCookies): string {
     return `${SESSION_COOKIE_NAME}=${cookies.session}; ${CSRF_COOKIE_NAME}=${cookies.csrf}`;
   }
+
+  describe('POST /auth/register', () => {
+    it('cria o usuário e retorna userId e email', async () => {
+      const newEmail = `register-${Date.now()}@example.com`;
+
+      const response = await request(server)
+        .post('/auth/register')
+        .send({
+          name: 'Grace Hopper',
+          email: newEmail,
+          password: PASSWORD,
+          termsAccepted: true,
+        })
+        .expect(201);
+
+      expect(response.body.userId).toBeDefined();
+      expect(response.body.email).toBe(newEmail);
+
+      await writePool.query('DELETE FROM users WHERE id = $1', [
+        response.body.userId,
+      ]);
+    });
+
+    it('responde 422 EMAIL_ALREADY_EXISTS e não cria um segundo usuário com o mesmo email', async () => {
+      const response = await request(server)
+        .post('/auth/register')
+        .send({
+          name: 'Duplicate',
+          email,
+          password: PASSWORD,
+          termsAccepted: true,
+        })
+        .expect(422);
+
+      expect(response.body.code).toBe('EMAIL_ALREADY_EXISTS');
+
+      const { rows } = await writePool.query(
+        'SELECT count(*)::int AS count FROM users WHERE email = $1',
+        [email],
+      );
+      expect(rows[0].count).toBe(1);
+    });
+
+    it('normaliza o email para lowercase antes de checar duplicidade (EMAIL_ALREADY_EXISTS mesmo com case diferente)', async () => {
+      const response = await request(server)
+        .post('/auth/register')
+        .send({
+          name: 'Duplicate Case',
+          email: email.toUpperCase(),
+          password: PASSWORD,
+          termsAccepted: true,
+        })
+        .expect(422);
+
+      expect(response.body.code).toBe('EMAIL_ALREADY_EXISTS');
+    });
+
+    it('responde 422 TERMS_NOT_ACCEPTED quando termsAccepted é false', async () => {
+      const response = await request(server)
+        .post('/auth/register')
+        .send({
+          name: 'No Terms',
+          email: `no-terms-${Date.now()}@example.com`,
+          password: PASSWORD,
+          termsAccepted: false,
+        })
+        .expect(422);
+
+      expect(response.body.code).toBe('TERMS_NOT_ACCEPTED');
+    });
+
+    it('responde 422 INVALID_EMAIL quando o formato do email é inválido', async () => {
+      const response = await request(server)
+        .post('/auth/register')
+        .send({
+          name: 'Bad Email',
+          email: 'not-an-email',
+          password: PASSWORD,
+          termsAccepted: true,
+        })
+        .expect(422);
+
+      expect(response.body.code).toBe('INVALID_EMAIL');
+    });
+  });
 
   describe('POST /auth/login', () => {
     it('autentica com credenciais válidas e retorna os dados do usuário', async () => {
@@ -322,6 +407,25 @@ describe('IdentityController — autenticação (integração)', () => {
           [userId],
         );
         expect(rowCount).toBe(0);
+      });
+
+      it('não bloqueia quando a última falha que cruzou o limiar já passou de 15 minutos', async () => {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          await request(server)
+            .post('/auth/login')
+            .send({ email, password: 'Wr0ng!Pass' })
+            .expect(401);
+        }
+        const sixteenMinutesAgo = new Date(Date.now() - 16 * 60 * 1000);
+        await writePool.query(
+          'UPDATE login_attempts SET created_at = $1 WHERE email = $2',
+          [sixteenMinutesAgo, email],
+        );
+
+        await request(server)
+          .post('/auth/login')
+          .send({ email, password: PASSWORD })
+          .expect(200);
       });
     });
   });

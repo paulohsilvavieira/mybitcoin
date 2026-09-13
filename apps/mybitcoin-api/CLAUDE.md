@@ -169,13 +169,31 @@ Em `../../docs/adr/` — decisões arquiteturais já tomadas (ADRs antigos em `.
 ```bash
 pnpm install                  # instalar dependências
 pnpm start:dev                # servidor em modo watch
-pnpm test                     # testes
+pnpm prepare:test             # sobe o Postgres de teste (primary+replica) e roda migrations
+pnpm test                     # testes (unitários + integração, precisa do prepare:test rodado antes)
 pnpm test:cov                 # cobertura
 pnpm migration:create         # criar arquivo de migration
 pnpm migration:run            # aplicar migrations pendentes
 pnpm migration:dry-run        # simular migrations sem aplicar
 pnpm lint                     # linting
 ```
+
+Antes de rodar `pnpm test` localmente, suba o banco de teste uma vez com `pnpm prepare:test` (containers `test-postgres-primary`/`test-postgres-replica` do `docker-compose.yml` da raiz do monorepo, portas `5444`/`5445` — isolados dos bancos de desenvolvimento). Sem isso, todo spec de integração falha por falta de conexão. O CI (`.github/workflows/ci.yml`) já faz isso automaticamente antes de rodar `pnpm test`.
+
+---
+
+## Estratégia de testes
+
+O critério de onde vale a pena ter teste **unitário** (com mocks) não é "todo arquivo tem que ter um `.spec.ts`" — é se o comportamento tem lógica de decisão real (branches, invariantes, edge cases) que compensa isolar do banco.
+
+- **Módulo `financial`** (transações, ledger, saldo, depósito, saque — tudo que move dinheiro): **testes unitários E de integração**. É onde há mais chance de edge case sutil (dupla confirmação, arredondamento, INV-001 a INV-014), e o mock permite forçar cenários difíceis de reproduzir de forma confiável só com banco (ex: forçar erro no meio de uma transação para validar rollback). O unitário aqui é do use case/entidade (`confirm-deposit.usecase.spec.ts`, `transaction.entity.spec.ts`), não do repositório.
+- **Todo o resto** (`identity`, sessões, guards, controllers): **somente teste de integração**, batendo em HTTP real contra Postgres real (padrão em `identity.controller.spec.ts` e `sessions.controller.spec.ts`). Não crie `.usecase.spec.ts` mockando repositório para esses fluxos — se o comportamento é só orquestração/delegação sem branch de decisão, o teste de integração já cobre com mais fidelidade e sem duplicar setup.
+- **Repositório (`pg-*.repository.ts`) nunca tem spec próprio, em nenhum módulo** — nem unitário mockando `db.query`, nem integração isolada batendo direto no repositório. O teste de integração do fluxo completo (controller ou use case, contra Postgres real) já exercita o repositório de ponta a ponta, incluindo o SQL de verdade; um spec dedicado a repositório só duplica esse caminho com um setup a mais para manter. Se um repositório novo não tem nenhum controller/use case cobrindo o fluxo que o exercita, crie esse teste de integração — não um spec avulso do repositório.
+- **Especificamente evite:**
+  - Testes que só verificam `toHaveBeenCalledWith` num mock que devolve exatamente o que foi mandado devolver (não prova nada sobre o comportamento real).
+  - Testes de "arquitetura" via reflexão (`Object.getOwnPropertyNames` para provar que uma interface não tem certo método) — isso é responsabilidade do TypeScript/design da interface, não de um teste que roda em CI.
+  - Duplicar em unitário um cenário que a suíte de integração já cobre igual ou melhor.
+- **Entidades e value objects de domínio puro** (sem I/O) continuam com teste unitário normalmente — não têm banco para integrar contra, e a lógica de invariante mora ali mesmo (ex: `transaction.entity.spec.ts`, `email.vo.spec.ts`).
 
 ---
 
@@ -200,3 +218,5 @@ Nunca implemente código que toque ledger sem ler `../../docs/bussiness/04-carte
 - **Não importe infraestrutura em `src/modules/*/domain/`** — violação da Regra de Dependência
 - **Não processe operação financeira sem verificar KYC** — veja `../../docs/bussiness/02-identidade-e-acesso.md`
 - **Não faça múltiplos writes sem `UnitOfWork`** — risco de estado parcial
+- **Não crie `.usecase.spec.ts` unitário mockando repositório fora do módulo `financial`** — veja [Estratégia de testes](#estratégia-de-testes)
+- **Não crie spec dedicado para `pg-*.repository.ts`** (nem unitário nem integração isolada), em nenhum módulo — cubra o repositório via teste de integração do controller/use case que o usa

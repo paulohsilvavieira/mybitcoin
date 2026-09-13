@@ -1,5 +1,6 @@
 import { ConfirmDepositUseCase } from '@/modules/financial/application/confirm-deposit.usecase';
 import { Transaction, LedgerEntry } from '@/modules/financial/domain/entities';
+import { TransactionAlreadyConfirmedError } from '@/modules/financial/domain/errors/transaction-already-confirmed.error';
 
 describe('ConfirmDepositUseCase', () => {
   let useCase: ConfirmDepositUseCase;
@@ -63,5 +64,22 @@ describe('ConfirmDepositUseCase', () => {
       .catch(() => {});
 
     expect(mockLedgerRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('throws and does not duplicate ledger entries when confirming an already confirmed transaction', async () => {
+    const transaction = Transaction.create({
+      accountId: 'user-123',
+      type: 'deposit',
+      amountSatoshi: 100_000n,
+    });
+    transaction.confirm();
+    mockTransactionRepo.findById.mockResolvedValue(transaction);
+
+    await expect(
+      useCase.execute({ transactionId: transaction.id, confirmations: 3 }),
+    ).rejects.toBeInstanceOf(TransactionAlreadyConfirmedError);
+
+    expect(mockLedgerRepo.save).not.toHaveBeenCalled();
+    expect(mockTransactionRepo.save).not.toHaveBeenCalled();
   });
 });

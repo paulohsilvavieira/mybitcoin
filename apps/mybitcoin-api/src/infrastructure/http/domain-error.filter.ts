@@ -18,6 +18,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   USER_NOT_FOUND: HttpStatus.UNAUTHORIZED,
   // LOG-006 — bloqueio por excesso de tentativas de login.
   TOO_MANY_LOGIN_ATTEMPTS: HttpStatus.TOO_MANY_REQUESTS,
+  TRANSACTION_ALREADY_CONFIRMED: HttpStatus.CONFLICT,
 };
 
 const DEFAULT_STATUS = HttpStatus.UNPROCESSABLE_ENTITY;

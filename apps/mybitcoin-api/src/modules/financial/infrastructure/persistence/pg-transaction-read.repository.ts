@@ -1,5 +1,6 @@
 import { TransactionReadRepository } from '@/modules/financial/domain/repositories';
 import { Transaction } from '@/modules/financial/domain/entities';
+import { TransactionStatus } from '@/modules/financial/domain/entities/transaction.entity';
 import { ReadQueryExecutor } from '@/infrastructure/database/read-query-executor';
 import { findTransactionByIdQuery } from '@/modules/financial/infrastructure/persistence/transaction.sql';
 
@@ -29,10 +30,13 @@ export class PgTransactionReadRepository extends TransactionReadRepository {
   }
 
   private toDomain(row: TransactionRow): Transaction {
-    return Transaction.create({
+    return Transaction.reconstitute({
+      id: row.id,
       accountId: row.account_id,
       type: row.type,
       amountSatoshi: BigInt(row.amount_satoshi),
+      status: row.status as TransactionStatus,
+      createdAt: row.created_at,
     });
   }
 }

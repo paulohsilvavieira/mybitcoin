@@ -1,3 +1,5 @@
+import { TransactionAlreadyConfirmedError } from '@/modules/financial/domain/errors/transaction-already-confirmed.error';
+
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';
 
 export class Transaction {
@@ -16,7 +18,7 @@ export class Transaction {
 
   confirm(): void {
     if (this._status !== 'pending') {
-      throw new Error(`Cannot confirm transaction in status '${this._status}'`);
+      throw new TransactionAlreadyConfirmedError(this.id, this._status);
     }
     this._status = 'confirmed';
   }
@@ -33,6 +35,24 @@ export class Transaction {
       params.amountSatoshi,
       'pending',
       new Date(),
+    );
+  }
+
+  static reconstitute(params: {
+    id: string;
+    accountId: string;
+    type: string;
+    amountSatoshi: bigint;
+    status: TransactionStatus;
+    createdAt: Date;
+  }): Transaction {
+    return new Transaction(
+      params.id,
+      params.accountId,
+      params.type,
+      params.amountSatoshi,
+      params.status,
+      params.createdAt,
     );
   }
 }

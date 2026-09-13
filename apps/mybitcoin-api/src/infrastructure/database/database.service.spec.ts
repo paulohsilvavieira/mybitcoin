@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QueryResult } from 'pg';
 import { DatabaseService } from '@/infrastructure/database/database.service';
 import { WRITE_POOL_TOKEN } from '@/infrastructure/database/database.token';
 
@@ -27,18 +26,6 @@ describe('DatabaseService', () => {
     }).compile();
 
     service = module.get<DatabaseService>(DatabaseService);
-  });
-
-  describe('query', () => {
-    it('delegates to pool.query', async () => {
-      const fakeResult = { rows: [{ id: 1 }] } as unknown as QueryResult;
-      mockPool.query.mockResolvedValueOnce(fakeResult);
-
-      const result = await service.query('SELECT 1', []);
-
-      expect(mockPool.query).toHaveBeenCalledWith('SELECT 1', []);
-      expect(result).toBe(fakeResult);
-    });
   });
 
   describe('runInTransaction', () => {

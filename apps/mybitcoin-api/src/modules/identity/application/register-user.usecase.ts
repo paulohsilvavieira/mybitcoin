@@ -30,6 +30,7 @@ export class RegisterUser {
     const email = Email.create(input.email);
 
     const existingUser = await this.userRepo.findByEmail(email);
+
     if (existingUser) {
       this.logger.warn('Registration rejected: email already exists', {
         operation: 'register.user.email.error.already_exists',

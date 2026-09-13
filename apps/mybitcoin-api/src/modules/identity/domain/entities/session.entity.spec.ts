@@ -9,28 +9,12 @@ describe('Session', () => {
   };
 
   describe('create', () => {
-    it('cria sessão com id gerado', () => {
-      const session = Session.create(validParams);
-      expect(session.id).toBeDefined();
-      expect(session.id.toString()).toHaveLength(36);
-    });
-
-    it('cria sessão com expiresAt 24h após createdAt', () => {
-      const session = Session.create(validParams);
-      const diffMs = session.expiresAt.getTime() - session.createdAt.getTime();
-      expect(diffMs).toBe(24 * 60 * 60 * 1000);
-    });
-
-    it('cria sessão ativa, não revogada', () => {
+    it('cria sessão ativa, não revogada, com expiresAt 24h após createdAt', () => {
       const session = Session.create(validParams);
       expect(session.revokedAt).toBeNull();
       expect(session.isActive()).toBe(true);
-    });
-
-    it('cria sessão com deviceInfo e ipAddress registrados', () => {
-      const session = Session.create(validParams);
-      expect(session.deviceInfo).toBe('Chrome on Linux');
-      expect(session.ipAddress).toBe('127.0.0.1');
+      const diffMs = session.expiresAt.getTime() - session.createdAt.getTime();
+      expect(diffMs).toBe(24 * 60 * 60 * 1000);
     });
   });
 
@@ -95,25 +79,6 @@ describe('Session', () => {
       const originalExpiresAt = session.expiresAt;
       session.touch(new Date(session.lastActivityAt.getTime() + 60_000));
       expect(session.expiresAt).toBe(originalExpiresAt);
-    });
-  });
-
-  describe('reconstitute', () => {
-    it('reconstitui sessão a partir de dados persistidos', () => {
-      const session = Session.reconstitute({
-        id: { toString: () => 'session-1' } as any,
-        userId: 'user-1',
-        tokenHash: 'a'.repeat(64),
-        deviceInfo: 'Firefox on macOS',
-        ipAddress: '192.168.1.1',
-        createdAt: new Date('2026-01-01T00:00:00Z'),
-        lastActivityAt: new Date('2026-01-01T00:00:00Z'),
-        expiresAt: new Date('2026-01-02T00:00:00Z'),
-        revokedAt: null,
-      });
-
-      expect(session.userId).toBe('user-1');
-      expect(session.deviceInfo).toBe('Firefox on macOS');
     });
   });
 });

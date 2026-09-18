@@ -84,6 +84,49 @@ Os nomes de filtro são os campos `name` do `package.json` de cada app: `mybitco
 
 ---
 
+## Comandos por app, direto da raiz (`pnpm api:*` / `pnpm front:*` / `pnpm app:*`)
+
+Além das tasks do Turborepo acima (pensadas para rodar nos três apps de uma vez), o `package.json` da raiz também expõe **todos** os scripts individuais de cada app, prefixados por `api:`, `front:` ou `app:`. Isso evita precisar dar `cd apps/<app>` só para rodar um comando específico — cada um é só um atalho para `pnpm --filter <nome-do-app> <script>`.
+
+```bash
+# backend (mybitcoin-api)
+pnpm api:start:dev              # nest start --watch
+pnpm api:test                   # jest
+pnpm api:test:cov
+pnpm api:test:e2e
+pnpm api:lint
+pnpm api:migration:run
+pnpm api:migration:dry-run
+pnpm api:seed:run               # aplica os seeds pendentes (ver "Fluxo de seeds" abaixo)
+pnpm api:seed:dry-run
+pnpm api:prepare:test           # sobe o Postgres de teste e roda as migrations de teste
+
+# frontend web (mybitcoin-front)
+pnpm front:dev
+pnpm front:build
+pnpm front:lint
+pnpm front:test
+pnpm front:test:watch
+
+# mobile (mybitcoin-app)
+pnpm app:start
+pnpm app:android
+pnpm app:ios
+pnpm app:web
+pnpm app:lint
+```
+
+Scripts que recebem argumento (como `migration:create`/`seed:create`, que esperam um nome) precisam do `--` do pnpm para repassar o argumento até o comando de verdade:
+
+```bash
+pnpm api:migration:create -- create_orders_table
+pnpm api:seed:create -- seed_markets
+```
+
+A lista completa e atualizada de scripts por app fica nos respectivos `package.json` (`apps/mybitcoin-api/package.json`, `apps/mybitcoin-front/package.json`, `apps/mybitcoin-app/package.json`) — os atalhos na raiz espelham exatamente os nomes de lá, só com o prefixo do app na frente.
+
+---
+
 ## Rodando cada app individualmente
 
 ### `mybitcoin-api` (backend)
@@ -102,7 +145,7 @@ Outros comandos úteis, direto na pasta do app:
 pnpm test                      # testes unitários + de integração (exige banco — ver abaixo)
 pnpm test:cov                  # com cobertura
 pnpm test:e2e                  # testes e2e
-pnpm migration:create          # criar novo arquivo de migration
+pnpm migration:create <nome>   # criar novo arquivo de migration (schema)
 pnpm migration:dry-run         # simular migrations sem aplicar
 ```
 
@@ -113,6 +156,23 @@ pnpm prepare:test               # sobe test-postgres-primary/replica via docker 
 ```
 
 Sem isso, os testes de integração/e2e falham por não conseguir conectar ao Postgres — é esperado, não é bug.
+
+#### Fluxo de seeds (dados de referência)
+
+Além de migrations (schema), a API tem um fluxo análogo para popular **dados de referência** (ex.: catálogo de ativos, mercados seedados) — arquivos `.sql` em `src/infrastructure/database/seeds/`, aplicados uma única vez e rastreados numa tabela própria (`schema_seeds`), do mesmo jeito que migrations são rastreadas em `schema_migrations`. Não é upsert: para mudar um dado já seedado, cria-se um novo arquivo de seed com o `UPDATE` necessário, mantendo o histórico imutável.
+
+```bash
+pnpm seed:create <nome>         # cria src/infrastructure/database/seeds/<timestamp>_<nome>.sql
+pnpm seed:run                   # aplica os seeds pendentes, em ordem, dentro de transação
+pnpm seed:dry-run                # lista os pendentes sem aplicar
+```
+
+Seeds **não** rodam automaticamente junto de `migration:run`/`prepare:test` — é um passo manual, deliberadamente separado, para não popular dado de referência sem querer em ambientes onde isso não faz sentido (ex.: produção já seedada). Rode migrations primeiro, depois seeds:
+
+```bash
+pnpm migration:run
+pnpm seed:run
+```
 
 Documentação de arquitetura e regras de negócio da API vive na raiz do monorepo (`docs/`), não mais dentro da pasta do app — ver seção "Documentação" abaixo.
 

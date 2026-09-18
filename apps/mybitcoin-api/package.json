@@ -24,7 +24,12 @@
     "migration:run": "ts-node --project tsconfig.scripts.json ./src/infrastructure/database/scripts/run-migration.script.ts",
     "migration:dry-run": "DRY_RUN=true ts-node --project tsconfig.scripts.json ./src/infrastructure/database/scripts/run-migration.script.ts",
     "migration:run:test": "NODE_ENV=test pnpm migration:run",
-    "migration:dry-run:test": "NODE_ENV=test DRY_RUN=true pnpm migration:run"
+    "migration:dry-run:test": "NODE_ENV=test DRY_RUN=true pnpm migration:run",
+    "seed:create": "ts-node --project tsconfig.scripts.json ./src/infrastructure/database/scripts/create-seed.script.ts",
+    "seed:run": "ts-node --project tsconfig.scripts.json ./src/infrastructure/database/scripts/run-seed.script.ts",
+    "seed:dry-run": "DRY_RUN=true ts-node --project tsconfig.scripts.json ./src/infrastructure/database/scripts/run-seed.script.ts",
+    "seed:run:test": "NODE_ENV=test pnpm seed:run",
+    "seed:dry-run:test": "NODE_ENV=test DRY_RUN=true pnpm seed:run"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",
